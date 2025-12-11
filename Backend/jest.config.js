@@ -5,10 +5,10 @@ module.exports = {
   collectCoverageFrom: [
     'src/**/*.js',
     '!src/config/colors.js',
-    '!**/node_modules/**'
+    '!**/node_modules/**',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   verbose: true,
-  testTimeout: 10000
+  testTimeout: 10000,
 };

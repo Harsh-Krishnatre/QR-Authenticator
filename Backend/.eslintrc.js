@@ -3,14 +3,14 @@ module.exports = {
     browser: false,
     es2021: true,
     node: true,
-    jest: true
+    jest: true,
   },
   extends: [
-    'airbnb-base'
+    'airbnb-base',
   ],
   parserOptions: {
     ecmaVersion: 12,
-    sourceType: 'module'
+    sourceType: 'module',
   },
   rules: {
     'no-console': 'off',
@@ -21,6 +21,6 @@ module.exports = {
     'no-param-reassign': 'off',
     'no-return-await': 'off',
     'no-underscore-dangle': 'off',
-    'class-methods-use-this': 'off'
-  }
+    'class-methods-use-this': 'off',
+  },
 };

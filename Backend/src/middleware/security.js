@@ -1,237 +1,188 @@
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
+const settings = require('../config/settings');
+const logger = require('../utils/logger');
 
-// Security headers configuration
-const securityHeaders = helmet({
-  // Content Security Policy
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https:"],
-      scriptSrc: ["'self'"],
-      connectSrc: ["'self'"],
-      frameSrc: ["'none'"],
-      objectSrc: ["'none'"],
-      upgradeInsecureRequests: [],
-    },
-  },
-  
-  // HTTP Strict Transport Security
-  hsts: {
-    maxAge: 31536000, // 1 year
-    includeSubDomains: true,
-    preload: true
-  },
+class Security {
+    constructor() {
+        this.securityHeaders = helmet({
+            contentSecurityPolicy: {
+                directives: {
+                    defaultSrc: ["'self'"],
+                    styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+                    fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+                    imgSrc: ["'self'", 'data:', 'https:'],
+                    scriptSrc: ["'self'"],
+                    connectSrc: ["'self'"],
+                    frameSrc: ["'none'"],
+                    objectSrc: ["'none'"],
+                    upgradeInsecureRequests: [],
+                },
+            },
+            hsts: {
+                maxAge: 31536000,
+                includeSubDomains: true,
+                preload: true
+            },
+            referrerPolicy: {
+                policy: 'strict-origin-when-cross-origin'
+            },
+            permissionsPolicy: {
+                features: {
+                    geolocation: ["'none'"],
+                    microphone: ["'none'"],
+                    camera: ["'none'"],
+                    payment: ["'none'"],
+                    usb: ["'none'"],
+                    magnetometer: ["'none'"],
+                    gyroscope: ["'none'"],
+                    accelerometer: ["'none'"],
+                },
+            },
+        });
 
-  // Referrer Policy
-  referrerPolicy: {
-    policy: ["no-referrer", "strict-origin-when-cross-origin"]
-  },
-
-  // Feature Policy / Permissions Policy
-  permissionsPolicy: {
-    features: {
-      geolocation: ["'none'"],
-      microphone: ["'none'"],
-      camera: ["'none'"],
-      payment: ["'none'"],
-      usb: ["'none'"],
-      magnetometer: ["'none'"],
-      gyroscope: ["'none'"],
-      accelerometer: ["'none'"]
+        this.noSQLInjectionPrevention = mongoSanitize({
+            replaceWith: '_',
+            onSanitize: ({ req, key }) => {
+                try {
+                    logger.warn(`Potential NoSQL injection attempt detected from IP: ${req?.ip || 'unknown'}, Key: ${key}`);
+                } catch (e) {
+                    logger.warn('Potential NoSQL injection attempt detected (unable to read req details).');
+                }
+            },
+        });
     }
-  }
-});
 
-// NoSQL injection prevention
-const noSQLInjectionPrevention = mongoSanitize({
-  replaceWith: '_',
-  onSanitize: ({ req, key }) => {
-    console.warn(`Potential NoSQL injection attempt detected from IP: ${req.ip}, Key: ${key}`);
-  }
-});
+    xssProtection(req, res, next) {
+        res.setHeader('X-XSS-Protection', '1; mode=block');
 
-// XSS Protection middleware
-const xssProtection = (req, res, next) => {
-  // Set X-XSS-Protection header
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  
-  // Validate and sanitize common XSS vectors
-  const sanitizeValue = (value) => {
-    if (typeof value === 'string') {
-      // Remove or escape potentially dangerous characters
-      return value
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
-        .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '') // Remove iframe tags
-        .replace(/javascript:/gi, '') // Remove javascript: protocol
-        .replace(/on\w+\s*=/gi, '') // Remove event handlers
-        .trim();
+        const sanitizeValue = (value) => {
+            if (typeof value === 'string') {
+                return value.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '').replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '').replace(/javascript:/gi, '').replace(/on\w+\s*=/gi, '')
+                    .trim();
+            }
+            return value;
+        };
+
+        const sanitizeObject = (obj) => {
+            if (!obj || typeof obj !== 'object') {
+                return;
+            }
+            for (const key in obj) {
+                if (!Object.prototype.hasOwnProperty.call(obj, key)) {
+                    continue;
+                }
+                if (typeof obj[key] === 'object' && obj[key] !== null) {
+                    sanitizeObject(obj[key]);
+                } else {
+                    obj[key] = sanitizeValue(obj[key]);
+                }
+            }
+        };
+
+        sanitizeObject(req.body);
+        sanitizeObject(req.query);
+        next();
     }
-    return value;
-  };
 
-  // Sanitize request body
-  if (req.body && typeof req.body === 'object') {
-    const sanitizeObject = (obj) => {
-      for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          if (typeof obj[key] === 'object' && obj[key] !== null) {
-            sanitizeObject(obj[key]);
-          } else {
-            obj[key] = sanitizeValue(obj[key]);
-          }
+    get corsOptions() {
+        return {
+            origin: (origin, callback) => {
+                if (!origin) {
+                    return callback(null, true);
+                }
+
+                const allowedOrigins = [(settings && settings.FRONTEND_URL) || 'http://localhost:3000', 'http://localhost:5173'];
+                if (allowedOrigins.indexOf(origin) !== -1) {
+                    callback(null, true);
+                } else {
+                    logger.warn(`CORS violation attempt from origin: ${origin}`); callback(new Error('Not allowed by CORS'));
+                }
+            },
+            credentials: true,
+            optionsSuccessStatus: 200,
+            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+            allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-HTTP-Method-Override', 'Accept', 'Origin'],
+            exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
+        };
+    }
+
+    requestSanitization(req, res, next) {
+        const sanitizeString = (str) => (typeof str === 'string' ? str.replace(/\0/g, '') : str);
+        const sanitizeObject = (obj) => {
+            if (obj && typeof obj === 'object') {
+                for (const key in obj) {
+                    if (!Object.prototype.hasOwnProperty.call(obj, key)) {
+                        continue;
+                    }
+                    if (typeof obj[key] === 'object' && obj[key] !== null) {
+                        sanitizeObject(obj[key]);
+                    } else {
+                        obj[key] = sanitizeString(obj[key]);
+                    }
+                }
+            }
+        };
+
+        sanitizeObject(req.body);
+        sanitizeObject(req.query);
+        sanitizeObject(req.params);
+        next();
+    }
+
+    ipFiltering(req, res, next) {
+        const clientIP = req.ip || (req.connection && req.connection.remoteAddress) || '';
+        const blockedIPs = ((settings && settings.BLOCKED_IPS) || '').split(',').map((ip) => ip.trim()).filter(Boolean);
+
+        if (blockedIPs.includes(clientIP)) {
+            logger.warn(`Blocked IP attempt: ${clientIP}`);
+            return res.status(403).json({ success: false, error: 'Access denied' });
         }
-      }
-    };
-    sanitizeObject(req.body);
-  }
-
-  // Sanitize query parameters
-  if (req.query && typeof req.query === 'object') {
-    for (const key in req.query) {
-      if (req.query.hasOwnProperty(key)) {
-        req.query[key] = sanitizeValue(req.query[key]);
-      }
+        next();
     }
-  }
 
-  next();
-};
+    securityLogging(req, res, next) {
+        const timestamp = new Date().toISOString();
+        const clientIP = req.ip || (req.connection && req.connection.remoteAddress) || 'unknown';
+        const userAgent = req.get('User-Agent') || 'Unknown';
+        const { method } = req;
+        const url = req.originalUrl || req.url || '';
 
-// CORS configuration
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
-    
-    // List of allowed origins
-    const allowedOrigins = [
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-      'http://localhost:3001',
-      'https://yourdomain.com' // Add your production domain
-    ];
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.warn(`CORS violation attempt from origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-Requested-With',
-    'X-HTTP-Method-Override',
-    'Accept',
-    'Origin'
-  ],
-  exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset']
-};
-
-// Request sanitization middleware
-const requestSanitization = (req, res, next) => {
-  // Remove null bytes
-  const sanitizeString = (str) => {
-    if (typeof str === 'string') {
-      return str.replace(/\0/g, '');
-    }
-    return str;
-  };
-
-  // Recursively sanitize object
-  const sanitizeObject = (obj) => {
-    if (obj && typeof obj === 'object') {
-      for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          if (typeof obj[key] === 'object') {
-            sanitizeObject(obj[key]);
-          } else {
-            obj[key] = sanitizeString(obj[key]);
-          }
+        if (method !== 'GET' || url.includes('auth') || url.includes('admin')) {
+            logger.info(`[SECURITY] ${timestamp} - ${clientIP} - ${method} ${url} - UA: ${userAgent}`);
         }
-      }
+        next();
     }
-  };
 
-  // Sanitize request body and query
-  sanitizeObject(req.body);
-  sanitizeObject(req.query);
-  sanitizeObject(req.params);
-
-  next();
-};
-
-// IP whitelisting/blacklisting middleware
-const ipFiltering = (req, res, next) => {
-  const clientIP = req.ip || req.connection.remoteAddress;
-  
-  // List of blocked IPs (you can store this in database or environment variables)
-  const blockedIPs = (process.env.BLOCKED_IPS || '').split(',').filter(ip => ip.trim());
-  
-  if (blockedIPs.includes(clientIP)) {
-    console.warn(`Blocked IP attempt: ${clientIP}`);
-    return res.status(403).json({
-      success: false,
-      error: 'Access denied'
-    });
-  }
-  
-  next();
-};
-
-// Request logging for security monitoring
-const securityLogging = (req, res, next) => {
-  const timestamp = new Date().toISOString();
-  const clientIP = req.ip || req.connection.remoteAddress;
-  const userAgent = req.get('User-Agent') || 'Unknown';
-  const method = req.method;
-  const url = req.originalUrl;
-  
-  // Log security-sensitive requests
-  if (method !== 'GET' || url.includes('auth') || url.includes('admin')) {
-    console.log(`[SECURITY] ${timestamp} - ${clientIP} - ${method} ${url} - UA: ${userAgent}`);
-  }
-  
-  next();
-};
-
-// Content type validation
-const contentTypeValidation = (req, res, next) => {
-  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
-    const contentType = req.get('Content-Type');
-    
-    if (!contentType) {
-      return res.status(400).json({
-        success: false,
-        error: 'Content-Type header is required'
-      });
+    contentTypeValidation(req, res, next) {
+        if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+            const contentType = req.get('Content-Type') || '';
+            if (!contentType) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Content-Type header is required'
+                });
+            }
+            if (!contentType.includes('application/json')) {
+                return res.status(415).json({
+                    success: false,
+                    error: 'Unsupported Media Type. Only application/json is allowed'
+                });
+            }
+        }
+        next();
     }
-    
-    // Only allow JSON content type for API endpoints
-    if (!contentType.includes('application/json')) {
-      return res.status(415).json({
-        success: false,
-        error: 'Unsupported Media Type. Only application/json is allowed'
-      });
-    }
-  }
-  
-  next();
-};
+}
+
+const security = new Security();
 
 module.exports = {
-  securityHeaders,
-  noSQLInjectionPrevention,
-  xssProtection,
-  corsOptions,
-  requestSanitization,
-  ipFiltering,
-  securityLogging,
-  contentTypeValidation
+    securityHeaders: security.securityHeaders,
+    noSQLInjectionPrevention: security.noSQLInjectionPrevention,
+    xssProtection: security.xssProtection.bind(security),
+    corsOptions: security.corsOptions,
+    requestSanitization: security.requestSanitization.bind(security),
+    ipFiltering: security.ipFiltering.bind(security),
+    securityLogging: security.securityLogging.bind(security),
+    contentTypeValidation: security.contentTypeValidation.bind(security),
 };

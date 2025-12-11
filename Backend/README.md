@@ -112,15 +112,14 @@ Register a new user with email and authentication method.
 ```json
 {
   "email": "user@example.com",
-  "authMethod": "security_questions", // or "picture_pattern"
-  "securityQuestions": [ // Required if authMethod is "security_questions"
+  "authMethod": "security_questions",
+  "securityQuestions": [
     {
       "question": "What is the name of your first pet?",
       "answer": "Buddy"
     }
-    // ... minimum 3 questions
   ],
-  "picturePattern": { // Required if authMethod is "picture_pattern"
+  "picturePattern": {
     "selectedImages": [1, 2, 3, 4],
     "metadata": {
       "gridSize": "3x3",
@@ -227,8 +226,8 @@ src/
 ├── config/
 │   ├── database.js          # MongoDB connection
 │   └── colors.js            # Console colors utility
-├── controllers/
-│   └── authController.js    # Authentication logic
+├── controllers/             # Class-based controllers
+│   └── authController.js    # Authentication controller (class-based)
 ├── middleware/
 │   ├── validation.js        # Input validation
 │   ├── rateLimiting.js      # Rate limiting

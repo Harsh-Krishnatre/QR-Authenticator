@@ -1,12 +1,5 @@
-// Test setup file
+// Test setup: set test environment
 process.env.NODE_ENV = 'test';
-process.env.JWT_SECRET = 'test-jwt-secret';
-process.env.MONGODB_URI = 'mongodb://localhost:27017/authentication-test';
 
-// Mock console methods to reduce noise during testing
-global.console = {
-  ...console,
-  log: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn()
-};
+// Optionally configure globals here
+jest.setTimeout(10000);

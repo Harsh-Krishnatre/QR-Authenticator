@@ -15,7 +15,7 @@ const colors = {
     blue: '\x1b[34m',
     magenta: '\x1b[35m',
     cyan: '\x1b[36m',
-    white: '\x1b[37m'
+    white: '\x1b[37m',
   },
 
   bg: {
@@ -26,31 +26,30 @@ const colors = {
     blue: '\x1b[44m',
     magenta: '\x1b[45m',
     cyan: '\x1b[46m',
-    white: '\x1b[47m'
-  }
+    white: '\x1b[47m',
+  },
 };
 
-// Add color methods to String prototype
-String.prototype.black = function() { return colors.fg.black + this + colors.reset; };
-String.prototype.red = function() { return colors.fg.red + this + colors.reset; };
-String.prototype.green = function() { return colors.fg.green + this + colors.reset; };
-String.prototype.yellow = function() { return colors.fg.yellow + this + colors.reset; };
-String.prototype.blue = function() { return colors.fg.blue + this + colors.reset; };
-String.prototype.magenta = function() { return colors.fg.magenta + this + colors.reset; };
-String.prototype.cyan = function() { return colors.fg.cyan + this + colors.reset; };
-String.prototype.white = function() { return colors.fg.white + this + colors.reset; };
+String.prototype.black = function () { return colors.fg.black + this + colors.reset; };
+String.prototype.red = function () { return colors.fg.red + this + colors.reset; };
+String.prototype.green = function () { return colors.fg.green + this + colors.reset; };
+String.prototype.yellow = function () { return colors.fg.yellow + this + colors.reset; };
+String.prototype.blue = function () { return colors.fg.blue + this + colors.reset; };
+String.prototype.magenta = function () { return colors.fg.magenta + this + colors.reset; };
+String.prototype.cyan = function () { return colors.fg.cyan + this + colors.reset; };
+String.prototype.white = function () { return colors.fg.white + this + colors.reset; };
 
-String.prototype.bgBlack = function() { return colors.bg.black + this + colors.reset; };
-String.prototype.bgRed = function() { return colors.bg.red + this + colors.reset; };
-String.prototype.bgGreen = function() { return colors.bg.green + this + colors.reset; };
-String.prototype.bgYellow = function() { return colors.bg.yellow + this + colors.reset; };
-String.prototype.bgBlue = function() { return colors.bg.blue + this + colors.reset; };
-String.prototype.bgMagenta = function() { return colors.bg.magenta + this + colors.reset; };
-String.prototype.bgCyan = function() { return colors.bg.cyan + this + colors.reset; };
-String.prototype.bgWhite = function() { return colors.bg.white + this + colors.reset; };
+String.prototype.bgBlack = function () { return colors.bg.black + this + colors.reset; };
+String.prototype.bgRed = function () { return colors.bg.red + this + colors.reset; };
+String.prototype.bgGreen = function () { return colors.bg.green + this + colors.reset; };
+String.prototype.bgYellow = function () { return colors.bg.yellow + this + colors.reset; };
+String.prototype.bgBlue = function () { return colors.bg.blue + this + colors.reset; };
+String.prototype.bgMagenta = function () { return colors.bg.magenta + this + colors.reset; };
+String.prototype.bgCyan = function () { return colors.bg.cyan + this + colors.reset; };
+String.prototype.bgWhite = function () { return colors.bg.white + this + colors.reset; };
 
-String.prototype.bold = function() { return colors.bright + this + colors.reset; };
-String.prototype.dim = function() { return colors.dim + this + colors.reset; };
-String.prototype.underline = function() { return colors.underscore + this + colors.reset; };
+String.prototype.bold = function () { return colors.bright + this + colors.reset; };
+String.prototype.dim = function () { return colors.dim + this + colors.reset; };
+String.prototype.underline = function () { return colors.underscore + this + colors.reset; };
 
 module.exports = colors;

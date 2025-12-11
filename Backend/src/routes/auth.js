@@ -1,35 +1,27 @@
 const express = require('express');
+
 const router = express.Router();
 
-// Import controllers
-const {
-  registerUser,
-  submitPattern,
-  getRegistrationStatus,
-  resendVerification,
-  cleanupPendingRegistrations
-} = require('../controllers/authController');
+const authController = require('../controllers/authController');
 
-// Import middleware
 const {
   registrationValidation,
   patternSubmissionValidation,
   handleValidationErrors,
   ipValidation,
-  requestSizeValidation
+  requestSizeValidation,
 } = require('../middleware/validation');
 
 const {
   registrationLimiter,
   authLimiter,
-  speedLimiter
+  speedLimiter,
 } = require('../middleware/rateLimiting');
 
 const {
-  securityLogging
+  securityLogging,
 } = require('../middleware/security');
 
-// Apply common middleware to all auth routes
 router.use(ipValidation);
 router.use(requestSizeValidation);
 router.use(securityLogging);
@@ -40,12 +32,13 @@ router.use(securityLogging);
  * @access  Public
  * @body    { email, authMethod, securityQuestions?, picturePattern? }
  */
-router.post('/register',
+router.post(
+  '/register',
   registrationLimiter,
   speedLimiter,
   registrationValidation,
   handleValidationErrors,
-  registerUser
+  authController.registerUser,
 );
 
 /**
@@ -54,11 +47,12 @@ router.post('/register',
  * @access  Public
  * @body    { email, hashedSecretCode, numberColorPattern }
  */
-router.post('/submit-pattern',
+router.post(
+  '/submit-pattern',
   authLimiter,
   patternSubmissionValidation,
   handleValidationErrors,
-  submitPattern
+  authController.submitPattern,
 );
 
 /**
@@ -67,9 +61,10 @@ router.post('/submit-pattern',
  * @access  Public
  * @param   {string} email - Email address to check
  */
-router.get('/registration-status/:email',
+router.get(
+  '/registration-status/:email',
   authLimiter,
-  getRegistrationStatus
+  authController.getRegistrationStatus,
 );
 
 /**
@@ -78,9 +73,10 @@ router.get('/registration-status/:email',
  * @access  Public
  * @body    { email }
  */
-router.post('/resend-verification',
+router.post(
+  '/resend-verification',
   authLimiter,
-  resendVerification
+  authController.resendVerification,
 );
 
 /**
@@ -89,9 +85,10 @@ router.post('/resend-verification',
  * @access  Private (Admin)
  * @note    This endpoint should be protected with admin authentication in production
  */
-router.delete('/cleanup-pending',
+router.delete(
+  '/cleanup-pending',
   authLimiter,
-  cleanupPendingRegistrations
+  authController.cleanupPendingRegistrations,
 );
 
 // Health check endpoint for auth routes
@@ -101,7 +98,7 @@ router.get('/health', (req, res) => {
     message: 'Authentication service is healthy',
     timestamp: new Date().toISOString(),
     service: 'auth',
-    version: '1.0.0'
+    version: '1.0.0',
   });
 });
 
