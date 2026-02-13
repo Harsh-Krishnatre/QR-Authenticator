@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
-const logger = require('./src/utils/logger')
+const logger = require('./src/utils/logger');
 const connectDB = require('./src/config/database');
 const { corsOptions } = require('./src/middleware/security');
 const {
@@ -21,6 +21,7 @@ const homeRoutes = require('./src/routes/home');
 const healthRoutes = require('./src/routes/health');
 const authRoutes = require('./src/routes/auth');
 const settings = require('./src/config/settings');
+
 const app = express();
 
 app.set('trust proxy', 1);

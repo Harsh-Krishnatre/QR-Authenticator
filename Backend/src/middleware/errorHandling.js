@@ -3,6 +3,7 @@ const logger = require('../utils/logger');
 
 class ErrorHandling {
     errorHandler(err, req, res, _next) {
+        // eslint-disable-next-line no-void
         void _next;
         logger.error('Error Stack:', err.stack);
 
@@ -14,7 +15,7 @@ class ErrorHandling {
             error = {
                 name: 'ValidationError',
                 message,
-                statusCode: 400
+                statusCode: 400,
             };
         }
 
@@ -24,7 +25,7 @@ class ErrorHandling {
             error = {
                 name: 'DuplicateError',
                 message,
-                statusCode: 400
+                statusCode: 400,
             };
         }
 
@@ -33,7 +34,7 @@ class ErrorHandling {
             error = {
                 name: 'CastError',
                 message,
-                statusCode: 400
+                statusCode: 400,
             };
         }
 
@@ -42,7 +43,7 @@ class ErrorHandling {
             error = {
                 name: 'AuthenticationError',
                 message,
-                statusCode: 401
+                statusCode: 401,
             };
         }
 
@@ -51,7 +52,7 @@ class ErrorHandling {
             error = {
                 name: 'AuthenticationError',
                 message,
-                statusCode: 401
+                statusCode: 401,
             };
         }
 
@@ -68,7 +69,7 @@ class ErrorHandling {
             error = {
                 name: 'DatabaseError',
                 message: 'Database operation failed',
-                statusCode: 500
+                statusCode: 500,
             };
         }
 
@@ -76,7 +77,7 @@ class ErrorHandling {
             error = {
                 name: 'CORSError',
                 message: 'Cross-origin request blocked',
-                statusCode: 403
+                statusCode: 403,
             };
         }
 
@@ -84,7 +85,7 @@ class ErrorHandling {
             error = {
                 name: 'FileSizeError',
                 message: 'File size too large',
-                statusCode: 413
+                statusCode: 413,
             };
         }
 
@@ -120,6 +121,7 @@ class ErrorHandling {
     }
 
     notFoundHandler(req, res, _next) {
+        // eslint-disable-next-line no-void
         void _next;
         const error = new Error(`Route ${req.originalUrl} not found`);
         error.statusCode = 404;
@@ -151,7 +153,7 @@ class ErrorHandling {
         const response = {
             success: false,
             error: message,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
         };
         if (details) {
             response.details = details;
@@ -159,11 +161,11 @@ class ErrorHandling {
         return res.status(statusCode).json(response);
     }
 
-    sendSuccess(res, statusCode = 200, message, data = null) {
+    sendSuccess(res, message, data = null, statusCode = 200) {
         const response = {
             success: true,
             message,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
         };
         if (data) {
             response.data = data;
