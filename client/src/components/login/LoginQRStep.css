@@ -1,0 +1,68 @@
+.login-qr-step {
+  width: 100%;
+}
+
+.qr-status {
+  margin: 24px 0;
+  text-align: center;
+}
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.status-indicator.waiting {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-indicator.success {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.pulse {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #1976d2;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+.success-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #2e7d32;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.qr-actions {
+  margin: 24px 0;
+}
+
+.step-actions {
+  margin-top: 24px;
+}
