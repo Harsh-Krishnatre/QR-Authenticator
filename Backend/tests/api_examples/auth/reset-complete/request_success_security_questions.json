@@ -1,0 +1,15 @@
+{
+  "resetToken": "plain-reset-token-for-testing",
+  "authMethod": "security_questions",
+  "securityQuestions": [
+    { "question": "What is the name of your first pet?", "answer": "Buddy" },
+    { "question": "In which city were you born?", "answer": "Ludhiana" },
+    { "question": "What is the name of your favorite teacher?", "answer": "Ms. Rao" }
+  ],
+  "numberColorPattern": [
+    { "number": 2, "color": "blue" },
+    { "number": 4, "color": "yellow" },
+    { "number": 6, "color": "purple" },
+    { "number": 8, "color": "pink" }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+    "success": true,
+    "message": "Verification information resent",
+    "timestamp": "2026-02-14T11:03:33.984Z",
+    "data": {
+        "email": "bob1.picture@example.com",
+        "hashedSecretCode": "$2a$12$.dc2Pqms4fuNxR6rtJjbe.VYX3kxFcf1VFdYeTTpTiAgxVAyU1o5G",
+        "message": "Please complete your pattern selection to activate your account"
+    }
+}

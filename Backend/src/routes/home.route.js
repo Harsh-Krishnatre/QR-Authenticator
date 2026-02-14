@@ -1,10 +1,11 @@
 const express = require('express');
+const { sendSuccess } = require('../middleware/errorHandling');
 
 const router = express.Router();
 
 router.get('/', (req, res) => {
     sendSuccess(res, 'Welcome to Authentication API', {
-        message: 'Secure MERN stack authentication system',
+        message: 'Secure authentication system',
         version: '1.0.0',
         documentation: '/api/v1/docs',
         endpoints: {

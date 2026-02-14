@@ -1,0 +1,10 @@
+{
+    "email": "alice.test@example.com",
+    "hashedSecretCode": "$2a$12$EXAMPLEHASH...",
+    "numberColorPattern": [
+        {
+            "number": 0,
+            "color": "unknown"
+        }
+    ]
+}

@@ -1,0 +1,141 @@
+{
+    "collectionName": "Auth API - Requestly Examples",
+    "baseUrl": "http://localhost:8000/api/v1",
+    "notes": "This JSON is a Requestly-friendly mapping of requests to example payload/response files. Import manually by creating requests in Requestly and referencing the body/expected response files below.",
+    "requests": [
+        {
+            "name": "Register (security questions) - request",
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/register",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "bodyFile": "tests/api_examples/auth/register/request_success_security_questions.json",
+            "expectedResponseFile": "tests/api_examples/auth/register/response_success_security_questions.json"
+        },
+        {
+            "name": "Register (picture pattern) - request",
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/register",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "bodyFile": "tests/api_examples/auth/register/request_success_picture_pattern.json",
+            "expectedResponseFile": "tests/api_examples/auth/register/response_success_picture_pattern.json"
+        },
+        {
+            "name": "Register - duplicate",
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/register",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "bodyFile": "tests/api_examples/auth/register/request_duplicate.json",
+            "expectedResponseFile": "tests/api_examples/auth/register/response_duplicate.json"
+        },
+        {
+            "name": "Submit Pattern - success",
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/submit-pattern",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "bodyFile": "tests/api_examples/auth/submit-pattern/request_success.json",
+            "expectedResponseFile": "tests/api_examples/auth/submit-pattern/response_success.json"
+        },
+        {
+            "name": "Submit Pattern - user not found",
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/submit-pattern",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "bodyFile": "tests/api_examples/auth/submit-pattern/request_user_not_found.json",
+            "expectedResponseFile": "tests/api_examples/auth/submit-pattern/response_user_not_found.json"
+        },
+        {
+            "name": "Submit Pattern - invalid pattern",
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/submit-pattern",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "bodyFile": "tests/api_examples/auth/submit-pattern/request_invalid_pattern.json",
+            "expectedResponseFile": "tests/api_examples/auth/submit-pattern/response_invalid_pattern.json"
+        },
+        {
+            "name": "Registration Status - not registered (GET)",
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/registration-status/no.user%40example.com",
+            "expectedResponseFile": "tests/api_examples/auth/registration-status/response_not_registered.json"
+        },
+        {
+            "name": "Registration Status - pending",
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/registration-status/alice.test%40example.com",
+            "expectedResponseFile": "tests/api_examples/auth/registration-status/response_pending.json"
+        },
+        {
+            "name": "Resend Verification - request",
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/resend-verification",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "bodyFile": "tests/api_examples/auth/resend-verification/request_success.json",
+            "expectedResponseFile": "tests/api_examples/auth/resend-verification/response_success.json"
+        },
+        {
+            "name": "Login - initiate",
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "bodyFile": "tests/api_examples/auth/login/request_initiate.json",
+            "expectedResponseFile": "tests/api_examples/auth/login/response_initiate.json"
+        },
+        {
+            "name": "Login - verify",
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login/verify",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "bodyFile": "tests/api_examples/auth/login-verify/request_success.json",
+            "expectedResponseFile": "tests/api_examples/auth/login-verify/response_success.json"
+        },
+        {
+            "name": "Reset - request",
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/reset-request",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "bodyFile": "tests/api_examples/auth/reset/request_success.json",
+            "expectedResponseFile": "tests/api_examples/auth/reset/response_success_test_env.json"
+        },
+        {
+            "name": "Reset - complete",
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/reset-complete",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "bodyFile": "tests/api_examples/auth/reset-complete/request_success_security_questions.json",
+            "expectedResponseFile": "tests/api_examples/auth/reset-complete/response_success.json"
+        },
+        {
+            "name": "Health - GET",
+            "method": "GET",
+            "url": "{{baseUrl}}/health",
+            "expectedResponseFile": "tests/api_examples/general/health/response.json"
+        },
+        {
+            "name": "Home - GET",
+            "method": "GET",
+            "url": "{{baseUrl}}/",
+            "expectedResponseFile": "tests/api_examples/general/home/response.json"
+        }
+    ]
+}

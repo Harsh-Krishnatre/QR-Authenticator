@@ -1,0 +1,12 @@
+{
+    "success": true,
+    "message": "User registration initiated successfully",
+    "timestamp": "2026-02-14T10:43:53.723Z",
+    "data": {
+        "email": "bob.picture@example.com",
+        "hashedSecretCode": "$2a$12$JM3/PsE9E1POK83jr4D2B.IVn8pOwR1.BeNpDkVPEtO9KFG9QNmy6",
+        "authMethod": "picture_pattern",
+        "nextStep": "pattern_selection",
+        "message": "Please select your number-color pattern to complete registration"
+    }
+}

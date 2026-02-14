@@ -1,0 +1,5 @@
+{
+    "success": false,
+    "error": "User already exists with this email address",
+    "timestamp": "2026-02-14T10:00:01.000Z"
+}

@@ -1,0 +1,18 @@
+{
+    "email": "existing.user@example.com",
+    "authMethod": "security_questions",
+    "securityQuestions": [
+        {
+            "question": "What is the name of your first pet?",
+            "answer": "Buddy"
+        },
+        {
+            "question": "In which city were you born?",
+            "answer": "Ludhiana"
+        },
+        {
+            "question": "What is the name of your favorite teacher?",
+            "answer": "Ms. Rao"
+        }
+    ]
+}

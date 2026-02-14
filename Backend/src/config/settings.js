@@ -29,6 +29,9 @@ class Settings {
         this.RESET_TOKEN_EXPIRE = process.env.RESET_TOKEN_EXPIRE;
         this.OTP_TOKEN_EXPIRE = process.env.OTP_TOKEN_EXPIRE;
 
+        // Security Question
+        this.SECURITY_QUESTIONS = process.env.SECURITY_QUESTIONS ? JSON.parse(process.env.SECURITY_QUESTIONS) : [];
+
         // Frontend URL
         this.FRONTEND_URL = process.env.FRONTEND_URL;
     }

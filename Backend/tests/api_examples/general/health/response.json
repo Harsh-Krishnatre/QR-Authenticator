@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "message": "Server is running",
+  "timestamp": "2026-02-14T10:30:00.000Z",
+  "data": {
+    "timestamp": "2026-02-14T10:30:00.000Z",
+    "uptime": 12345,
+    "environment": "development",
+    "version": "1.0.0",
+    "database": "Connected"
+  }
+}

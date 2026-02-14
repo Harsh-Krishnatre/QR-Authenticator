@@ -22,10 +22,10 @@ class Security {
             hsts: {
                 maxAge: 31536000,
                 includeSubDomains: true,
-                preload: true
+                preload: true,
             },
             referrerPolicy: {
-                policy: 'strict-origin-when-cross-origin'
+                policy: 'strict-origin-when-cross-origin',
             },
             permissionsPolicy: {
                 features: {
@@ -68,16 +68,13 @@ class Security {
             if (!obj || typeof obj !== 'object') {
                 return;
             }
-            for (const key in obj) {
-                if (!Object.prototype.hasOwnProperty.call(obj, key)) {
-                    continue;
-                }
+            Object.keys(obj).forEach((key) => {
                 if (typeof obj[key] === 'object' && obj[key] !== null) {
                     sanitizeObject(obj[key]);
                 } else {
                     obj[key] = sanitizeValue(obj[key]);
                 }
-            }
+            });
         };
 
         sanitizeObject(req.body);
@@ -111,16 +108,13 @@ class Security {
         const sanitizeString = (str) => (typeof str === 'string' ? str.replace(/\0/g, '') : str);
         const sanitizeObject = (obj) => {
             if (obj && typeof obj === 'object') {
-                for (const key in obj) {
-                    if (!Object.prototype.hasOwnProperty.call(obj, key)) {
-                        continue;
-                    }
+                Object.keys(obj).forEach((key) => {
                     if (typeof obj[key] === 'object' && obj[key] !== null) {
                         sanitizeObject(obj[key]);
                     } else {
                         obj[key] = sanitizeString(obj[key]);
                     }
-                }
+                });
             }
         };
 
@@ -160,13 +154,13 @@ class Security {
             if (!contentType) {
                 return res.status(400).json({
                     success: false,
-                    error: 'Content-Type header is required'
+                    error: 'Content-Type header is required',
                 });
             }
             if (!contentType.includes('application/json')) {
                 return res.status(415).json({
                     success: false,
-                    error: 'Unsupported Media Type. Only application/json is allowed'
+                    error: 'Unsupported Media Type. Only application/json is allowed',
                 });
             }
         }

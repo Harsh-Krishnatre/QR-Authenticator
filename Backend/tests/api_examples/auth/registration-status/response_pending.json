@@ -1,0 +1,12 @@
+{
+    "success": true,
+    "message": "Registration status retrieved",
+    "timestamp": "2026-02-14T10:59:27.482Z",
+    "data": {
+        "exists": true,
+        "status": "pending_verification",
+        "authMethod": "security_questions",
+        "registeredAt": "2026-02-14T10:59:04.537Z",
+        "message": "Registration pending pattern selection"
+    }
+}

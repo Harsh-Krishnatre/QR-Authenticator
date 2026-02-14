@@ -1,0 +1,9 @@
+{
+    "success": true,
+    "message": "Cleanup completed",
+    "timestamp": "2026-02-14T10:20:00.000Z",
+    "data": {
+        "removedCount": 3,
+        "message": "Removed 3 incomplete registrations older than 24 hours"
+    }
+}

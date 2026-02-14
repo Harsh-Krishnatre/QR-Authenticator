@@ -1,0 +1,9 @@
+{
+    "success": true,
+    "message": "Reset token generated",
+    "timestamp": "2026-02-14T10:25:00.000Z",
+    "data": {
+        "email": "alice.test@example.com",
+        "resetToken": "plain-reset-token-for-testing"
+    }
+}

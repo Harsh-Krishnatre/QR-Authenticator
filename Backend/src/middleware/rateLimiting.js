@@ -18,12 +18,12 @@ class RateLimiting {
         });
 
         this.authLimiter = rateLimit({
-            windowMs: 15 * 60 * 1000,
+            windowMs: 5 * 60 * 1000,
             max: 20,
             message: {
                 success: false,
-                error: 'Too many authentication attempts, please try again in 15 minutes',
-                retryAfter: 900,
+                error: 'Too many authentication attempts, please try again in 5 minutes',
+                retryAfter: 300,
             },
             standardHeaders: true,
             legacyHeaders: false,
@@ -31,24 +31,24 @@ class RateLimiting {
         });
 
         this.registrationLimiter = rateLimit({
-            windowMs: 60 * 60 * 1000,
+            windowMs: 30 * 60 * 1000,
             max: 3,
             message: {
                 success: false,
-                error: 'Too many registration attempts, please try again in 1 hour',
-                retryAfter: 3600,
+                error: 'Too many registration attempts, please try again in 30 minutes',
+                retryAfter: 1800,
             },
             standardHeaders: true,
             legacyHeaders: false,
         });
 
         this.resetLimiter = rateLimit({
-            windowMs: 60 * 60 * 1000,
-            max: 5,
+            windowMs: 30 * 60 * 1000,
+            max: 3,
             message: {
                 success: false,
-                error: 'Too many reset attempts, please try again in 1 hour',
-                retryAfter: 3600,
+                error: 'Too many reset attempts, please try again in 30 minutes',
+                retryAfter: 1800,
             },
             standardHeaders: true,
             legacyHeaders: false,
@@ -82,25 +82,41 @@ class RateLimiting {
                 message: {
                     success: false,
                     error: 'Too many requests from this IP for public endpoints',
-                    retryAfter: 900
+                    retryAfter: 900,
                 },
             }),
             authenticated: rateLimit({
                 windowMs: 15 * 60 * 1000,
                 max: 100,
-                message: { success: false, error: 'Too many requests from authenticated user', retryAfter: 900 },
+                message: {
+                    success: false,
+                    error: 'Too many requests from authenticated user',
+                    retryAfter: 900,
+                },
             }),
             admin: rateLimit({
                 windowMs: 15 * 60 * 1000,
                 max: 200,
-                message: { success: false, error: 'Too many admin requests', retryAfter: 900 },
+                message: {
+                    success: false,
+                    error: 'Too many admin requests',
+                    retryAfter: 900,
+                },
             }),
         };
     }
 
     createCustomLimiter(options = {}) {
         const defaultOptions = {
-            windowMs: 15 * 60 * 1000, max: 50, message: { success: false, error: 'Rate limit exceeded', retryAfter: 900 }, standardHeaders: true, legacyHeaders: false,
+            windowMs: 15 * 60 * 1000,
+            max: 50,
+            message: {
+                success: false,
+                error: 'Rate limit exceeded',
+                retryAfter: 900,
+            },
+            standardHeaders: true,
+            legacyHeaders: false,
         };
         return rateLimit({ ...defaultOptions, ...options });
     }

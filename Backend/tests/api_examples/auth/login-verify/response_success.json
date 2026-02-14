@@ -1,0 +1,9 @@
+{
+    "success": true,
+    "message": "Login successful",
+    "timestamp": "2026-02-14T12:20:40.938Z",
+    "data": {
+        "token": "09fe224e958f5738dcc6272c71e03f1641adadd948571deb",
+        "expiresAt": "2026-02-21T12:20:40.929Z"
+    }
+}

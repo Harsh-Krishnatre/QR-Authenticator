@@ -1,0 +1,9 @@
+{
+    "success": true,
+    "message": "Login initiated. Present QR to authenticator",
+    "timestamp": "2026-02-14T11:04:53.422Z",
+    "data": {
+        "email": "alice.test@example.com",
+        "hashedSecretCode": "$2a$12$SAbdL7bgOTjc.TaG6MMrhOepxsvqbjsK3Rpif108iSwNgN3M7Tu2e"
+    }
+}

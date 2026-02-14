@@ -133,14 +133,18 @@ class ErrorHandling {
             timestamp: new Date().toISOString(),
             availableEndpoints: {
                 auth: [
-                    'POST /api/auth/register',
-                    'POST /api/auth/submit-pattern',
-                    'POST /api/auth/login',
-                    'POST /api/auth/logout',
-                    'POST /api/auth/reset-request',
-                    'POST /api/auth/reset-complete',
+                    'POST /api/v1/auth/register',
+                    'POST /api/v1/auth/submit-pattern',
+                    'POST /api/v1/auth/registration-status/:email',
+                    'POST /api/v1/auth/resend-verification',
+                    'POST /api/v1/auth/login',
+                    'POST /api/v1/auth/login/verify',
+                    'POST /api/v1/auth/cleanup-pending',
+                    'POST /api/v1/auth/reset-request',
+                    'POST /api/v1/auth/reset-complete',
                 ],
-                general: ['GET /api/health', 'GET /'],
+                config: ['GET /api/v1/config/security-questions'],
+                general: ['GET /api/v1/health', 'GET /api/v1'],
             },
         });
     }

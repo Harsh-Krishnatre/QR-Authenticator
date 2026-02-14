@@ -1,0 +1,22 @@
+{
+    "email": "alice.test@example.com",
+    "hashedSecretCode": "$2a$12$6ARZRxzD8V5fefj0eBo5qOFXqeLTZ.3WlnUueXeUFbQL8panPGaEO",
+    "numberColorPattern": [
+        {
+            "number": 1,
+            "color": "red"
+        },
+        {
+            "number": 2,
+            "color": "blue"
+        },
+        {
+            "number": 3,
+            "color": "green"
+        },
+        {
+            "number": 4,
+            "color": "yellow"
+        }
+    ]
+}

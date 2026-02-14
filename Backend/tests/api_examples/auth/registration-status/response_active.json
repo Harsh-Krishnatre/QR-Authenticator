@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "message": "Registration status retrieved",
+  "timestamp": "2026-02-14T10:10:02.000Z",
+  "data": {
+    "exists": true,
+    "status": "active",
+    "authMethod": "security_questions",
+    "registeredAt": "2026-02-14T10:00:00.000Z",
+    "message": "Account fully registered"
+  }
+}

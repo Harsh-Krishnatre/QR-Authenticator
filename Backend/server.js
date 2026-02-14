@@ -17,9 +17,10 @@ const {
     errorHandler,
     notFoundHandler,
 } = require('./src/middleware/errorHandling');
-const homeRoutes = require('./src/routes/home');
-const healthRoutes = require('./src/routes/health');
-const authRoutes = require('./src/routes/auth');
+const configRoutes = require('./src/routes/config.route');
+const homeRoutes = require('./src/routes/home.route');
+const healthRoutes = require('./src/routes/health.route');
+const authRoutes = require('./src/routes/auth.route');
 const settings = require('./src/config/settings');
 
 const app = express();
@@ -51,6 +52,7 @@ app.use(noSQLInjectionPrevention);
 app.use(generalLimiter);
 
 app.use('/api/v1', homeRoutes);
+app.use('/api/v1/config', configRoutes);
 app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/auth', authRoutes);
 

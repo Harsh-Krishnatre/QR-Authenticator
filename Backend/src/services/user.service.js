@@ -1,4 +1,4 @@
-const UserModel = require('../models/User');
+const UserModel = require('../models/user.model');
 
 class UserService {
     constructor(model) {
@@ -15,6 +15,11 @@ class UserService {
         const doc = new this.model(data);
         await doc.validate();
         return doc.save();
+    }
+
+    findByResetToken(token) {
+        if (!token) return null;
+        return this.model.findOne({ 'resetToken.token': token });
     }
 
     async cleanupExpiredData() {
