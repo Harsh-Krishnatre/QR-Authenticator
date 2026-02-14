@@ -1,0 +1,60 @@
+.reset-confirm-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+}
+
+.reset-container {
+  max-width: 600px;
+  width: 100%;
+}
+
+.reset-content {
+  background: white;
+  border-radius: 20px;
+  padding: 48px 40px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.reset-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.reset-description {
+  font-size: 15px;
+  color: #666;
+  text-align: center;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+.method-content {
+  margin-bottom: 24px;
+}
+
+.step-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.step-actions button {
+  flex: 1;
+}
+
+@media (max-width: 600px) {
+  .reset-content {
+    padding: 32px 24px;
+  }
+
+  .reset-title {
+    font-size: 24px;
+  }
+}
