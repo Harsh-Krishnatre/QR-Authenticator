@@ -5,8 +5,10 @@ import Button from '../shared/Button';
 import ErrorBanner from '../shared/ErrorBanner';
 import './LoginQRStep.css';
 
-const QR_DURATION = 60;
+const QR_DURATION = 120;
 const POLL_INTERVAL = 2000;
+
+const baseUrl = import.meta?.env?.VITE_BASE_URL ?? 'http://localhost:8000/api/v1';
 
 const LoginQRStep = ({ email, hashedSecret, sessionId, onSuccess, onBack }) => {
   const [qrData, setQrData] = useState(null);
@@ -33,13 +35,13 @@ const LoginQRStep = ({ email, hashedSecret, sessionId, onSuccess, onBack }) => {
 
     const pollStatus = async () => {
       try {
-        const response = await fetch(`/api/login/status?sessionId=${sessionId}`);
+        const response = await fetch(`${baseUrl}/auth/login/status?sessionId=${sessionId}`);
         const data = await response.json();
 
-        if (data.status === 'verified') {
+        if (data.data.status === 'verified') {
           setStatus('success');
           onSuccess(data);
-        } else if (data.status === 'failed') {
+        } else if (data.data.status === 'expired') {
           setStatus('failed');
           setError('Authentication failed. Please try again.');
         }
@@ -55,15 +57,9 @@ const LoginQRStep = ({ email, hashedSecret, sessionId, onSuccess, onBack }) => {
   const handleExpire = () => {
     setStatus('expired');
     setError('QR code expired. Please generate a new one.');
+    onBack();
   };
-
-  const handleRefresh = () => {
-    setStatus('waiting');
-    setError('');
-    setTimeLeft(QR_DURATION);
-    setQrData(generateQRData());
-  };
-
+ 
   return (
     <div className="login-qr-step">
       <h2 className="step-title">Scan QR Code</h2>
@@ -88,14 +84,6 @@ const LoginQRStep = ({ email, hashedSecret, sessionId, onSuccess, onBack }) => {
             onTick={setTimeLeft}
           />
         </>
-      )}
-
-      {(status === 'expired' || status === 'failed') && (
-        <div className="qr-actions">
-          <Button onClick={handleRefresh} fullWidth>
-            Generate New QR Code
-          </Button>
-        </div>
       )}
 
       {status === 'success' && (

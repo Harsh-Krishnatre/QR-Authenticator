@@ -28,9 +28,7 @@ class Validation {
 
         this.resetCompletionValidation = [
             body('resetToken').isLength({ min: 32, max: 64 }).withMessage('Invalid reset token format'),
-            body('authMethod').isIn(['security_questions', 'picture_pattern']).withMessage('Authentication method must be either security_questions or picture_pattern'),
-            body('securityQuestions').if((value, { req }) => req.body.authMethod === 'security_questions').custom(this.customValidators.securityQuestionValidator),
-            body('picturePattern').if((value, { req }) => req.body.authMethod === 'picture_pattern').custom(this.customValidators.picturePatternValidator),
+            body('numberColorPattern').optional().custom(this.customValidators.numberColorPatternValidator),
         ];
     }
 
@@ -65,14 +63,36 @@ class Validation {
             },
 
             numberColorPatternValidator: (pattern) => {
-                if (!pattern || !Array.isArray(pattern) || pattern.length < 4 || pattern.length > 8) throw new Error('Number-color pattern must have between 4 and 8 elements');
-                const validColors = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'cyan'];
-                const validNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-                pattern.forEach((element) => {
-                    if (!element.number || !element.color) throw new Error('Each pattern element must have both number and color');
-                    if (!validNumbers.includes(element.number)) throw new Error('Pattern numbers must be between 1 and 9');
-                    if (!validColors.includes(element.color)) throw new Error('Invalid color in pattern');
+                if (!Array.isArray(pattern)) {
+                    throw new Error('Pattern must be an array');
+                }
+
+                if (pattern.length < 5 || pattern.length > 15) {
+                    throw new Error('Number-color pattern must have between 5 and 15 elements');
+                }
+
+                pattern.forEach((element, index) => {
+                    if (!element || typeof element !== 'object') {
+                        throw new Error(`Element ${index + 1} must be an object`);
+                    }
+
+                    if (!('number' in element)) {
+                        throw new Error(`Element ${index + 1} must have a number property`);
+                    }
+
+                    if (!('color' in element)) {
+                        throw new Error(`Element ${index + 1} must have a color property`);
+                    }
+
+                    if (element.number === undefined || element.number === null) {
+                        throw new Error(`Element ${index + 1} number cannot be null or undefined`);
+                    }
+
+                    if (element.color === undefined || element.color === null) {
+                        throw new Error(`Element ${index + 1} color cannot be null or undefined`);
+                    }
                 });
+
                 return true;
             },
         };

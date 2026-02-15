@@ -89,7 +89,7 @@ class Security {
                     return callback(null, true);
                 }
 
-                const allowedOrigins = [(settings && settings.FRONTEND_URL) || 'http://localhost:3000', 'http://localhost:5173'];
+                const allowedOrigins = [(settings && settings.FRONTEND_URL) || 'http://localhost:5173'];
                 if (allowedOrigins.indexOf(origin) !== -1) {
                     callback(null, true);
                 } else {

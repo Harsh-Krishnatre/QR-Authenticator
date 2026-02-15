@@ -10,6 +10,13 @@ class UserService {
         return this.model.findOne({ email: email.toLowerCase().trim() });
     }
 
+    async findByLoginSessionId(sessionId) {
+        if (!sessionId) return null;
+
+        const user = await this.model.findOne({ 'loginOTP.sessionId': sessionId });
+        return user;
+    }
+
     async createUser(data) {
         /* eslint-disable-next-line new-cap */
         const doc = new this.model(data);

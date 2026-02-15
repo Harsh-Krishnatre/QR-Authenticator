@@ -4,6 +4,8 @@ import Button from '../shared/Button';
 import ErrorBanner from '../shared/ErrorBanner';
 import LoadingSpinner from '../shared/LoadingSpinner';
 
+const baseUrl = import.meta?.env?.VITE_BASE_URL ?? 'http://localhost:8000/api/v1';
+
 const LoginEmailStep = ({ onNext }) => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
@@ -21,7 +23,7 @@ const LoginEmailStep = ({ onNext }) => {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/login/init', {
+      const response = await fetch(`${baseUrl}/auth/login/init`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -30,16 +32,16 @@ const LoginEmailStep = ({ onNext }) => {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.message || 'User not found');
+        setError(data.error || 'User not found');
         return;
       }
 
       onNext({
         email,
-        hashedSecret: data.hashedSecret,
-        sessionId: data.sessionId,
+        hashedSecret: data.data.hashedSecretCode,
+        sessionId: data.data.sessionId,
       });
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);

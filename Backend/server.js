@@ -12,11 +12,7 @@ const {
     ipFiltering,
     contentTypeValidation,
 } = require('./src/middleware/security');
-const { generalLimiter } = require('./src/middleware/rateLimiting');
-const {
-    errorHandler,
-    notFoundHandler,
-} = require('./src/middleware/errorHandling');
+const { errorHandler, notFoundHandler } = require('./src/middleware/errorHandling');
 const configRoutes = require('./src/routes/config.route');
 const homeRoutes = require('./src/routes/home.route');
 const healthRoutes = require('./src/routes/health.route');
@@ -48,8 +44,6 @@ app.use(contentTypeValidation);
 app.use(requestSanitization);
 app.use(xssProtection);
 app.use(noSQLInjectionPrevention);
-
-app.use(generalLimiter);
 
 app.use('/api/v1', homeRoutes);
 app.use('/api/v1/config', configRoutes);

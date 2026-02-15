@@ -1,22 +1,8 @@
 const rateLimit = require('express-rate-limit');
 const slowDown = require('express-slow-down');
-const settings = require('../config/settings');
 
 class RateLimiting {
     constructor() {
-        this.generalLimiter = rateLimit({
-            windowMs: parseInt(settings.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000,
-            max: parseInt(settings.RATE_LIMIT_MAX_REQUESTS, 10) || 100,
-            message: {
-                success: false,
-                error: 'Too many requests from this IP, please try again later',
-                retryAfter: Math.ceil((parseInt(settings.RATE_LIMIT_WINDOW_MS, 10) || 900000) / 1000),
-            },
-            standardHeaders: true,
-            legacyHeaders: false,
-            skip: (req) => req.path === '/health' || req.path === '/api/health',
-        });
-
         this.authLimiter = rateLimit({
             windowMs: 5 * 60 * 1000,
             max: 20,
@@ -28,6 +14,18 @@ class RateLimiting {
             standardHeaders: true,
             legacyHeaders: false,
             skipSuccessfulRequests: true,
+        });
+
+        this.registrationInitLimiter = rateLimit({
+            windowMs: 5 * 60 * 1000,
+            max: 30,
+            message: {
+                success: false,
+                error: 'Too many check email attempts, please try again in 5 minutes',
+                retryAfter: 300,
+            },
+            standardHeaders: true,
+            legacyHeaders: false,
         });
 
         this.registrationLimiter = rateLimit({
@@ -120,22 +118,17 @@ class RateLimiting {
         };
         return rateLimit({ ...defaultOptions, ...options });
     }
-
-    adaptiveRateLimiter(req, res, next) {
-        return this.generalLimiter(req, res, next);
-    }
 }
 
 const limiter = new RateLimiting();
 
 module.exports = {
-    generalLimiter: limiter.generalLimiter,
     authLimiter: limiter.authLimiter,
+    registrationInitLimiter: limiter.registrationInitLimiter,
     registrationLimiter: limiter.registrationLimiter,
     resetLimiter: limiter.resetLimiter,
     loginLimiter: limiter.loginLimiter,
     speedLimiter: limiter.speedLimiter,
-    adaptiveRateLimiter: limiter.adaptiveRateLimiter.bind(limiter),
     createCustomLimiter: limiter.createCustomLimiter.bind(limiter),
     tieredRateLimiter: limiter.tieredRateLimiter,
 };

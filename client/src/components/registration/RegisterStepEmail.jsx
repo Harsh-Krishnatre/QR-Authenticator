@@ -4,6 +4,8 @@ import Button from '../shared/Button';
 import ErrorBanner from '../shared/ErrorBanner';
 import LoadingSpinner from '../shared/LoadingSpinner';
 
+const baseUrl = import.meta?.env?.VITE_BASE_URL ?? 'http://localhost:8000/api/v1';
+
 const RegisterStepEmail = ({ onNext }) => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
@@ -21,7 +23,7 @@ const RegisterStepEmail = ({ onNext }) => {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/register/init', {
+      const response = await fetch(`${baseUrl}/auth/register/init`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -29,13 +31,15 @@ const RegisterStepEmail = ({ onNext }) => {
 
       const data = await response.json();
 
+      console.log("eeee: ", data);
+
       if (!response.ok) {
-        setError(data.message || 'User already exists');
+        setError(data.error || 'User already exists');
         return;
       }
 
       onNext({ email });
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);

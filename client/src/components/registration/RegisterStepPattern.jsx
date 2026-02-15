@@ -8,15 +8,25 @@ import LoadingSpinner from '../shared/LoadingSpinner';
 const COLORS = ['#FF5733', '#33FF57', '#3357FF', '#FF33F5', '#F5FF33', '#33FFF5'];
 const NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
+const baseUrl = import.meta?.env?.VITE_BASE_URL ?? 'http://localhost:8000/api/v1';
+
 const generatePatternGrid = () => {
-  const grid = [];
-  for (let i = 0; i < 12; i++) {
-    grid.push({
-      number: NUMBERS[Math.floor(Math.random() * NUMBERS.length)],
-      color: COLORS[Math.floor(Math.random() * COLORS.length)],
-    });
+  // build all possible unique number-color combinations
+  const all = [];
+  for (const n of NUMBERS) {
+    for (const c of COLORS) {
+      all.push({ number: n, color: c });
+    }
   }
-  return grid;
+
+  // shuffle (Fisher-Yates)
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [all[i], all[j]] = [all[j], all[i]];
+  }
+
+  // take first 15 unique combos
+  return all.slice(0, 15);
 };
 
 const RegisterStepPattern = ({ email, hashedSecret, onComplete, onBack }) => {
@@ -31,8 +41,8 @@ const RegisterStepPattern = ({ email, hashedSecret, onComplete, onBack }) => {
   }, []);
 
   const handleSubmit = async () => {
-    if (selectedPattern.length < 3) {
-      setError('Please select at least 3 cells for your pattern');
+    if (selectedPattern.length < 5) {
+      setError('Please select at least 5 cells for your pattern');
       return;
     }
 
@@ -40,13 +50,13 @@ const RegisterStepPattern = ({ email, hashedSecret, onComplete, onBack }) => {
     setError('');
 
     try {
-      const response = await fetch('/api/register/confirm', {
+      const response = await fetch(`${baseUrl}/auth/register/submit-pattern`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
-          hashedSecret,
-          pattern: selectedPattern,
+          hashedSecretCode: hashedSecret,
+          numberColorPattern: selectedPattern,
         }),
       });
 
@@ -60,8 +70,8 @@ const RegisterStepPattern = ({ email, hashedSecret, onComplete, onBack }) => {
       setSuccess('Registration successful! Redirecting...');
       setTimeout(() => {
         onComplete(data);
-      }, 1500);
-    } catch (err) {
+      }, 1000);
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -72,7 +82,7 @@ const RegisterStepPattern = ({ email, hashedSecret, onComplete, onBack }) => {
     <div className="registration-step">
       <h2 className="step-title">Confirm Your Pattern</h2>
       <p className="step-description">
-        Select at least 3 cells to create your authentication pattern
+        Select at least 5 cells to create your authentication pattern
       </p>
 
       <ErrorBanner message={error} onClose={() => setError('')} />

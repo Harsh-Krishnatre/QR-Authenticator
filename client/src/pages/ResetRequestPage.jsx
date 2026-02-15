@@ -6,6 +6,8 @@ import SuccessBanner from '../components/shared/SuccessBanner';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import './ResetRequestPage.css';
 
+const baseUrl = import.meta?.env?.VITE_BASE_URL ?? 'http://localhost:8000/api/v1';
+
 const ResetRequestPage = () => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
@@ -25,7 +27,7 @@ const ResetRequestPage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/reset/request', {
+      const response = await fetch(`${baseUrl}/auth/reset/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -34,13 +36,13 @@ const ResetRequestPage = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.message || 'Failed to send reset email');
+        setError(data.error || 'Failed to send reset email');
         return;
       }
 
       setSuccess('Reset email sent! Please check your inbox for instructions.');
       setEmail('');
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);

@@ -4,7 +4,6 @@ import RegisterStepEmail from "../components/registration/RegisterStepEmail";
 import RegisterStepMethod from "../components/registration/RegisterStepMethod";
 import RegisterStepPattern from "../components/registration/RegisterStepPattern";
 import "./RegisterPage.css";
-import LandingPage from "./LandingPage";
 
 const STEPS = {
   EMAIL: "email",

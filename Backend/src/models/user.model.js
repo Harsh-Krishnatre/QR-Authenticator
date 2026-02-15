@@ -120,15 +120,19 @@ const userSchema = new mongoose.Schema({
         token: String,
         hashedToken: String,
         expiresAt: Date,
-        used: {
-            type: Boolean,
-            default: false,
-        },
     },
 
     loginOTP: {
+        sessionId: {
+            type: String,
+        },
         hashedOTP: String,
         expiresAt: Date,
+        status: {
+            type: String,
+            enum: ['pending', 'pattern_verified'],
+            default: 'pending',
+        },
         attempts: {
             type: Number,
             default: 0,

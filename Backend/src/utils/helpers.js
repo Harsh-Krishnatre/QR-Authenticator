@@ -40,56 +40,84 @@ class Helpers {
     }
 
     async hashPattern(pattern) {
-        if (!Array.isArray(pattern)) throw new Error('Pattern must be an array');
-        const first = pattern.find((el) => el !== undefined && el !== null);
-        if (first === undefined) throw new Error('Pattern must contain at least one element');
+        if (!Array.isArray(pattern)) {
+            throw new Error('Pattern must be an array');
+        }
 
-        let patternString;
-        if (typeof first === 'number') {
-            const sorted = pattern.slice().sort((a, b) => a - b);
-            patternString = JSON.stringify(sorted);
+        if (pattern.length === 0) {
+            throw new Error('Pattern must contain at least one element');
+        }
+
+        const first = pattern.find((el) => el !== undefined && el !== null);
+        if (first === undefined) {
+            throw new Error('Pattern must contain at least one valid element');
+        }
+
+        let normalized;
+
+        if (typeof first === 'number' || typeof first === 'string') {
+            normalized = pattern.map((el) => String(el).trim());
         } else if (typeof first === 'object') {
-            const sorted = pattern.slice().sort((a, b) => {
-                const na = typeof a.number === 'number' ? a.number : 0;
-                const nb = typeof b.number === 'number' ? b.number : 0;
-                if (na !== nb) return na - nb;
-                const ca = (a.color || '').toString();
-                const cb = (b.color || '').toString();
-                return ca.localeCompare(cb);
+            normalized = pattern.map((el) => {
+                if (!el || typeof el !== 'object') {
+                    throw new Error('Invalid pattern element');
+                }
+
+                return {
+                    number: String(el.number).trim(),
+                    color: String(el.color).trim().toLowerCase(),
+                };
             });
-            patternString = JSON.stringify(sorted);
         } else {
             throw new Error('Unsupported pattern element type');
         }
 
-        return this.hashData(patternString);
+        return this.hashData(JSON.stringify(normalized));
     }
 
     async verifyPattern(pattern, hashedPattern) {
         try {
-            if (!Array.isArray(pattern) || !hashedPattern) return false;
-            const first = pattern.find((el) => el !== undefined && el !== null);
-            if (first === undefined) return false;
+            if (!Array.isArray(pattern) || !hashedPattern) {
+                return false;
+            }
 
-            let patternString;
-            if (typeof first === 'number') {
-                const sorted = pattern.slice().sort((a, b) => a - b);
-                patternString = JSON.stringify(sorted);
+            if (pattern.length === 0) {
+                return false;
+            }
+
+            const first = pattern.find((el) => el !== undefined && el !== null);
+            if (first === undefined) {
+                return false;
+            }
+
+            let normalized;
+
+            if (typeof first === 'number' || typeof first === 'string') {
+                normalized = pattern.map((el) => String(el).trim());
             } else if (typeof first === 'object') {
-                const sorted = pattern.slice().sort((a, b) => {
-                    const na = typeof a.number === 'number' ? a.number : 0;
-                    const nb = typeof b.number === 'number' ? b.number : 0;
-                    if (na !== nb) return na - nb;
-                    const ca = (a.color || '').toString();
-                    const cb = (b.color || '').toString();
-                    return ca.localeCompare(cb);
+                normalized = pattern.map((el) => {
+                    if (!el || typeof el !== 'object') {
+                        return null;
+                    }
+
+                    return {
+                        number: String(el.number).trim(),
+                        color: String(el.color).trim().toLowerCase(),
+                    };
                 });
-                patternString = JSON.stringify(sorted);
+
+                if (normalized.includes(null)) {
+                    return false;
+                }
             } else {
                 return false;
             }
 
-            return this.compareData(patternString, hashedPattern);
+            // Order-sensitive (NO SORTING)
+            return await this.compareData(
+                JSON.stringify(normalized),
+                hashedPattern,
+            );
         } catch (error) {
             logger.error('Pattern verification error:', error.message);
             return false;
@@ -103,77 +131,82 @@ class Helpers {
 
     validatePattern(pattern) {
         const result = { isValid: true, errors: [] };
+
         if (!Array.isArray(pattern)) {
-            result.isValid = false;
-            result.errors.push('Pattern must be an array');
-            return result;
+            return { isValid: false, errors: ['Pattern must be an array'] };
         }
 
-        // Two kinds of patterns are supported by the backend:
-        // 1) Picture-based patterns: an array of numeric image ids (length 4-9)
-        // 2) Number-color patterns: an array of objects { number, color } (length 4-8)
-        const validColors = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'cyan'];
-        const validNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        if (pattern.length === 0) {
+            return { isValid: false, errors: ['Pattern must contain at least one element'] };
+        }
 
-        // Detect element type by inspecting first non-null element
         const first = pattern.find((el) => el !== undefined && el !== null);
+
         if (first === undefined) {
-            result.isValid = false;
-            result.errors.push('Pattern must contain at least one element');
-            return result;
+            return { isValid: false, errors: ['Pattern must contain at least one valid element'] };
         }
 
-        // Picture pattern: elements are numbers (image ids)
-        if (typeof first === 'number') {
+        // -------- Picture Pattern (Flexible) --------
+        if (typeof first === 'number' || typeof first === 'string') {
             if (pattern.length < 4 || pattern.length > 9) {
                 result.isValid = false;
                 result.errors.push('Pattern must have between 4 and 9 elements');
             }
 
-            pattern.forEach((element, index) => {
-                if (typeof element !== 'number') {
+            pattern.forEach((el, i) => {
+                if (el === undefined || el === null) {
                     result.isValid = false;
-                    result.errors.push(`Element ${index + 1} must be a number`);
-                    return;
+                    result.errors.push(`Element ${i + 1} cannot be null or undefined`);
                 }
-                if (!validNumbers.includes(element)) {
+
+                if (typeof el !== 'number' && typeof el !== 'string') {
                     result.isValid = false;
-                    result.errors.push(`Element ${index + 1} has invalid image id`);
+                    result.errors.push(`Element ${i + 1} must be a number or string`);
                 }
             });
 
             return result;
         }
 
-        // Number-color pattern: elements should be objects with number and color
+        // -------- Number-Color Pattern (Fully Flexible) --------
         if (typeof first === 'object') {
             if (pattern.length < 4 || pattern.length > 8) {
                 result.isValid = false;
                 result.errors.push('Pattern must have between 4 and 8 elements');
             }
 
-            pattern.forEach((element, index) => {
-                if (!element || typeof element !== 'object') {
+            pattern.forEach((el, i) => {
+                if (!el || typeof el !== 'object') {
                     result.isValid = false;
-                    result.errors.push(`Element ${index + 1} must be an object`);
+                    result.errors.push(`Element ${i + 1} must be an object`);
                     return;
                 }
-                if (!validNumbers.includes(element.number)) {
+
+                if (!('number' in el)) {
                     result.isValid = false;
-                    result.errors.push(`Element ${index + 1} has invalid number`);
+                    result.errors.push(`Element ${i + 1} must contain a number property`);
                 }
-                if (!validColors.includes(element.color)) {
+
+                if (!('color' in el)) {
                     result.isValid = false;
-                    result.errors.push(`Element ${index + 1} has invalid color`);
+                    result.errors.push(`Element ${i + 1} must contain a color property`);
+                }
+
+                if (el.number === undefined || el.number === null) {
+                    result.isValid = false;
+                    result.errors.push(`Element ${i + 1} number cannot be null or undefined`);
+                }
+
+                if (el.color === undefined || el.color === null) {
+                    result.isValid = false;
+                    result.errors.push(`Element ${i + 1} color cannot be null or undefined`);
                 }
             });
 
             return result;
         }
 
-        result.isValid = false;
-        result.errors.push('Unsupported pattern element type');
-        return result;
+        return { isValid: false, errors: ['Unsupported pattern element type'] };
     }
 
     sanitizeInput(input, maxLength = 1000) {

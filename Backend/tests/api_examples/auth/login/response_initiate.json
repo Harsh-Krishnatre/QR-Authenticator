@@ -3,7 +3,9 @@
     "message": "Login initiated. Present QR to authenticator",
     "timestamp": "2026-02-14T11:04:53.422Z",
     "data": {
-        "email": "alice.test@example.com",
-        "hashedSecretCode": "$2a$12$SAbdL7bgOTjc.TaG6MMrhOepxsvqbjsK3Rpif108iSwNgN3M7Tu2e"
+        "email": "harsh@gmail.com",
+        "sessionId": "95a08339d77e2254d89240473a7a87b6aab018835c9e5a18",
+        "hashedSecretCode": "af14f6ee46313480c4a0bcbfc8bd672df3445ac8ee1ad6ef46760b496cc20066",
+        "expiresIn": 120
     }
 }

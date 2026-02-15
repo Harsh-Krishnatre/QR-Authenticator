@@ -11,22 +11,32 @@ import PicturePattern from '../components/registration/PicturePattern';
 import './ResetConfirmPage.css';
 
 const TABS = [
-  { id: 'questions', label: 'Security Questions' },
-  { id: 'pattern', label: 'Picture Pattern' },
+  { id: 'security_questions', label: 'Security Questions' },
+  { id: 'picture_pattern', label: 'Picture Pattern' },
 ];
 
 const COLORS = ['#FF5733', '#33FF57', '#3357FF', '#FF33F5', '#F5FF33', '#33FFF5'];
 const NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
+const baseUrl = import.meta?.env?.VITE_BASE_URL ?? 'http://localhost:8000/api/v1';
+
 const generatePatternGrid = () => {
-  const grid = [];
-  for (let i = 0; i < 12; i++) {
-    grid.push({
-      number: NUMBERS[Math.floor(Math.random() * NUMBERS.length)],
-      color: COLORS[Math.floor(Math.random() * COLORS.length)],
-    });
+  // build all possible unique number-color combinations
+  const all = [];
+  for (const n of NUMBERS) {
+    for (const c of COLORS) {
+      all.push({ number: n, color: c });
+    }
   }
-  return grid;
+
+  // shuffle (Fisher-Yates)
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [all[i], all[j]] = [all[j], all[i]];
+  }
+
+  // take first 15 unique combos
+  return all.slice(0, 15);
 };
 
 const ResetConfirmPage = () => {
@@ -35,21 +45,22 @@ const ResetConfirmPage = () => {
   const [validating, setValidating] = useState(true);
   const [isValidToken, setIsValidToken] = useState(false);
   const [step, setStep] = useState(1);
-  const [activeTab, setActiveTab] = useState('questions');
+  const [activeTab, setActiveTab] = useState('security_questions');
   const [securityData, setSecurityData] = useState(null);
   const [gridData, setGridData] = useState([]);
   const [selectedPattern, setSelectedPattern] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [availableQuestions, setAvailableQuestions] = useState([]);
 
   useEffect(() => {
     const verifyToken = async () => {
       try {
-        const response = await fetch('/api/reset/verify', {
+        const response = await fetch(`${baseUrl}/auth/reset/verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token }),
+          body: JSON.stringify({ resetToken: token }),
         });
 
         if (response.ok) {
@@ -58,7 +69,7 @@ const ResetConfirmPage = () => {
         } else {
           setError('Invalid or expired reset link');
         }
-      } catch (err) {
+      } catch {
         setError('Failed to verify reset link');
       } finally {
         setValidating(false);
@@ -67,6 +78,24 @@ const ResetConfirmPage = () => {
 
     verifyToken();
   }, [token]);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchQuestions = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/config/security-questions`);
+        const json = await res.json();
+        if (res.ok && mounted) {
+          setAvailableQuestions(json.data?.securityQuestions);
+        }
+      } catch {
+        setAvailableQuestions([]);
+      }
+    };
+
+    fetchQuestions();
+    return () => { mounted = false; };
+  }, []);
 
   const handleSecurityMethodSubmit = async () => {
     if (!securityData) {
@@ -78,13 +107,14 @@ const ResetConfirmPage = () => {
     setError('');
 
     try {
-      const response = await fetch('/api/reset/update-security', {
+      const key = activeTab === 'security_questions' ? 'securityQuestions' : 'picturePattern';
+      const response = await fetch(`${baseUrl}/auth/reset/security`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token,
-          method: activeTab,
-          data: securityData,
+          resetToken: token,
+          authMethod: activeTab,
+          [key]: securityData,
         }),
       });
 
@@ -96,7 +126,7 @@ const ResetConfirmPage = () => {
       }
 
       setStep(2);
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -104,8 +134,8 @@ const ResetConfirmPage = () => {
   };
 
   const handlePatternSubmit = async () => {
-    if (selectedPattern.length < 3) {
-      setError('Please select at least 3 cells for your pattern');
+    if (selectedPattern.length < 5) {
+      setError('Please select at least 5 cells for your pattern');
       return;
     }
 
@@ -113,27 +143,27 @@ const ResetConfirmPage = () => {
     setError('');
 
     try {
-      const response = await fetch('/api/reset/confirm', {
+      const response = await fetch(`${baseUrl}/auth/reset/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token,
-          pattern: selectedPattern,
+          resetToken: token,
+          numberColorPattern: selectedPattern,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.message || 'Reset failed');
+        setError(data.error || 'Reset failed');
         return;
       }
 
       setSuccess('Security method updated successfully! Redirecting...');
       setTimeout(() => {
         navigate('/login');
-      }, 2000);
-    } catch (err) {
+      }, 1000);
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -183,10 +213,13 @@ const ResetConfirmPage = () => {
               <TabSwitcher tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
 
               <div className="method-content">
-                {activeTab === 'questions' ? (
-                  <SecurityQuestions onChange={setSecurityData} />
+                {activeTab === 'security_questions' ? (
+                  <SecurityQuestions onChange={setSecurityData} availableQuestions={availableQuestions} />
                 ) : (
-                  <PicturePattern onChange={setSecurityData} />
+                  // <PicturePattern onChange={setSecurityData} />
+                  <div style={{ textAlign: 'center' }}>
+                    <Button>Comming Soon</Button>
+                  </div>
                 )}
               </div>
 
@@ -202,7 +235,7 @@ const ResetConfirmPage = () => {
             <>
               <h2 className="reset-title">Confirm Your Pattern</h2>
               <p className="reset-description">
-                Select at least 3 cells to create your authentication pattern
+                Select at least 5 cells to create your authentication pattern
               </p>
 
               <ErrorBanner message={error} onClose={() => setError('')} />

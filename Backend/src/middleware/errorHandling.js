@@ -133,12 +133,14 @@ class ErrorHandling {
             timestamp: new Date().toISOString(),
             availableEndpoints: {
                 auth: [
-                    'POST /api/v1/auth/register',
-                    'POST /api/v1/auth/submit-pattern',
+                    'POST /api/v1/auth/register/init',
+                    'POST /api/v1/auth/register/security',
+                    'POST /api/v1/auth/register/submit-pattern',
                     'POST /api/v1/auth/registration-status/:email',
                     'POST /api/v1/auth/resend-verification',
-                    'POST /api/v1/auth/login',
+                    'POST /api/v1/auth/login/init',
                     'POST /api/v1/auth/login/verify',
+                    'POST /api/v1/auth/login/status',
                     'POST /api/v1/auth/cleanup-pending',
                     'POST /api/v1/auth/reset-request',
                     'POST /api/v1/auth/reset-complete',
