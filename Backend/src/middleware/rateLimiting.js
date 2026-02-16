@@ -29,12 +29,12 @@ class RateLimiting {
         });
 
         this.registrationLimiter = rateLimit({
-            windowMs: 30 * 60 * 1000,
+            windowMs: 10 * 60 * 1000,
             max: 3,
             message: {
                 success: false,
-                error: 'Too many registration attempts, please try again in 30 minutes',
-                retryAfter: 1800,
+                error: 'Too many registration attempts, please try again in 10 minutes',
+                retryAfter: 600,
             },
             standardHeaders: true,
             legacyHeaders: false,
@@ -103,21 +103,6 @@ class RateLimiting {
             }),
         };
     }
-
-    createCustomLimiter(options = {}) {
-        const defaultOptions = {
-            windowMs: 15 * 60 * 1000,
-            max: 50,
-            message: {
-                success: false,
-                error: 'Rate limit exceeded',
-                retryAfter: 900,
-            },
-            standardHeaders: true,
-            legacyHeaders: false,
-        };
-        return rateLimit({ ...defaultOptions, ...options });
-    }
 }
 
 const limiter = new RateLimiting();
@@ -129,6 +114,5 @@ module.exports = {
     resetLimiter: limiter.resetLimiter,
     loginLimiter: limiter.loginLimiter,
     speedLimiter: limiter.speedLimiter,
-    createCustomLimiter: limiter.createCustomLimiter.bind(limiter),
     tieredRateLimiter: limiter.tieredRateLimiter,
 };

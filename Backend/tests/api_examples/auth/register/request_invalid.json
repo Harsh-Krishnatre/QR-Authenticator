@@ -1,5 +1,0 @@
-{
-  "email": "bad-email",
-  "authMethod": "security_questions",
-  "securityQuestions": [ { "question": "Invalid", "answer": "a" } ]
-}

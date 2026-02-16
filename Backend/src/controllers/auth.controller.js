@@ -15,9 +15,6 @@ class AuthController {
         this.checkUserExist = asyncHandler(this.checkUserExist.bind(this));
         this.registerUser = asyncHandler(this.registerUser.bind(this));
         this.submitPattern = asyncHandler(this.submitPattern.bind(this));
-        this.getRegistrationStatus = asyncHandler(this.getRegistrationStatus.bind(this));
-        this.resendVerification = asyncHandler(this.resendVerification.bind(this));
-        this.cleanupPendingRegistrations = asyncHandler(this.cleanupPendingRegistrations.bind(this));
         this.requestLogin = asyncHandler(this.requestLogin.bind(this));
         this.verifyLogin = asyncHandler(this.verifyLogin.bind(this));
         this.loginStatus = asyncHandler(this.loginStatus.bind(this));
@@ -25,6 +22,7 @@ class AuthController {
         this.resetTokenVerify = asyncHandler(this.resetTokenVerify.bind(this));
         this.handleSecurityMethodReset = asyncHandler(this.handleSecurityMethodReset.bind(this));
         this.handlePatternReset = asyncHandler(this.handlePatternReset.bind(this));
+        this.cleanupPendingRegistrations = asyncHandler(this.cleanupPendingRegistrations.bind(this));
     }
 
     async checkUserExist(req, res) {
@@ -206,69 +204,6 @@ class AuthController {
             }
 
             return sendError(res, 500, 'Failed to complete registration. Please try again.');
-        }
-    }
-
-    async getRegistrationStatus(req, res) {
-        const { email } = req.params;
-
-        try {
-            if (!validationUtils.isValidEmail(email)) {
-                return sendError(res, 400, 'Invalid email format');
-            }
-
-            const user = await UserService.findByEmail(email);
-            if (!user) {
-                return sendSuccess(res, 'Registration status retrieved', {
-                    exists: false,
-                    status: 'not_registered',
-                    message: 'No account found with this email address',
-                }, 200);
-            }
-
-            return sendSuccess(res, 'Registration status retrieved', {
-                exists: true,
-                status: user.accountStatus,
-                authMethod: user.authMethod,
-                registeredAt: user.registeredAt,
-                message: user.accountStatus === 'pending_verification'
-                    ? 'Registration pending pattern selection'
-                    : 'Account fully registered',
-            }, 200);
-        } catch (error) {
-            logger.error('Registration status error:', error);
-            return sendError(res, 500, 'Failed to retrieve registration status');
-        }
-    }
-
-    async resendVerification(req, res) {
-        const { email } = req.body;
-
-        try {
-            const user = await UserService.findByEmail(email);
-            if (!user) {
-                return sendError(res, 404, 'User not found');
-            }
-
-            if (user.accountStatus !== 'pending_verification') {
-                return sendError(res, 400, 'Account verification not required');
-            }
-
-            const newSecretCode = hashingUtils.generateSecretCode();
-            user.hashedSecretCode = await hashingUtils.hashData(newSecretCode);
-
-            await user.save();
-
-            logger.info(`Verification resent for user: ${email}`);
-
-            return sendSuccess(res, 'Verification information resent', {
-                email: user.email,
-                hashedSecretCode: user.hashedSecretCode,
-                message: 'Please complete your pattern selection to activate your account',
-            }, 200);
-        } catch (error) {
-            logger.error('Resend verification error:', error);
-            return sendError(res, 500, 'Failed to resend verification');
         }
     }
 

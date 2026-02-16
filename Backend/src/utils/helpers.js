@@ -146,7 +146,7 @@ class Helpers {
             return { isValid: false, errors: ['Pattern must contain at least one valid element'] };
         }
 
-        // -------- Picture Pattern (Flexible) --------
+        // -------- Picture Pattern --------
         if (typeof first === 'number' || typeof first === 'string') {
             if (pattern.length < 4 || pattern.length > 9) {
                 result.isValid = false;
@@ -168,7 +168,7 @@ class Helpers {
             return result;
         }
 
-        // -------- Number-Color Pattern (Fully Flexible) --------
+        // -------- Number-Color Pattern --------
         if (typeof first === 'object') {
             if (pattern.length < 4 || pattern.length > 8) {
                 result.isValid = false;

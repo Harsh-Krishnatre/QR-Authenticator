@@ -14,7 +14,6 @@ class Validation {
             body('authMethod').isIn(['security_questions', 'picture_pattern']).withMessage('Authentication method must be either security_questions or picture_pattern'),
             body('securityQuestions').if((value, { req }) => req.body.authMethod === 'security_questions').custom(this.customValidators.securityQuestionValidator),
             body('picturePattern').if((value, { req }) => req.body.authMethod === 'picture_pattern').custom(this.customValidators.picturePatternValidator),
-            body('numberColorPattern').optional().custom(this.customValidators.numberColorPatternValidator),
         ];
 
         this.patternSubmissionValidation = [
@@ -67,8 +66,8 @@ class Validation {
                     throw new Error('Pattern must be an array');
                 }
 
-                if (pattern.length < 5 || pattern.length > 15) {
-                    throw new Error('Number-color pattern must have between 5 and 15 elements');
+                if (pattern.length < 4 || pattern.length > 8) {
+                    throw new Error('Number-color pattern must have between 4 and 8 elements');
                 }
 
                 pattern.forEach((element, index) => {

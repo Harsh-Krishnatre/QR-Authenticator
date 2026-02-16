@@ -27,8 +27,6 @@ router.use(securityLogging);
 router.post('/register/init', registrationInitLimiter, speedLimiter, authController.checkUserExist);
 router.post('/register/security', registrationLimiter, speedLimiter, registrationValidation, handleValidationErrors, authController.registerUser);
 router.post('/register/submit-pattern', authLimiter, patternSubmissionValidation, handleValidationErrors, authController.submitPattern);
-router.get('/registration-status/:email', authLimiter, authController.getRegistrationStatus);
-router.post('/resend-verification', authLimiter, authController.resendVerification);
 router.post('/login/init', authLimiter, loginValidation, handleValidationErrors, authController.requestLogin);
 router.post('/login/verify', authLimiter, patternSubmissionValidation, handleValidationErrors, authController.verifyLogin);
 router.get('/login/status', handleValidationErrors, authController.loginStatus);
