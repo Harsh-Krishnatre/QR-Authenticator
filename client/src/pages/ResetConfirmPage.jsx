@@ -35,8 +35,8 @@ const generatePatternGrid = () => {
     [all[i], all[j]] = [all[j], all[i]];
   }
 
-  // take first 15 unique combos
-  return all.slice(0, 15);
+  // take first 8 unique combos
+  return all.slice(0, 8);
 };
 
 const ResetConfirmPage = () => {
@@ -134,8 +134,8 @@ const ResetConfirmPage = () => {
   };
 
   const handlePatternSubmit = async () => {
-    if (selectedPattern.length < 5) {
-      setError('Please select at least 5 cells for your pattern');
+    if (selectedPattern.length < 4) {
+      setError('Please select at least 4 cells for your pattern');
       return;
     }
 
@@ -235,7 +235,7 @@ const ResetConfirmPage = () => {
             <>
               <h2 className="reset-title">Confirm Your Pattern</h2>
               <p className="reset-description">
-                Select at least 5 cells to create your authentication pattern
+                Select at least 4 cells to create your authentication pattern
               </p>
 
               <ErrorBanner message={error} onClose={() => setError('')} />
