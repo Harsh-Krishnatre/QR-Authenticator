@@ -2,6 +2,10 @@
 
 A secure MERN stack backend for authentication with registration, login, and reset flows featuring advanced security patterns.
 
+## API Documentation
+
+For the complete and up-to-date backend API reference (all implemented `/api/v1` endpoints, request/response schemas, validations, and error behavior), see `API_GUIDE.md`.
+
 ## Features
 
 ### 🔐 Security Features

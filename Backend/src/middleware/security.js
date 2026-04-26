@@ -2,6 +2,7 @@ const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const settings = require('../config/settings');
 const logger = require('../utils/logger');
+const UserModel = require('../models/user.model');
 
 class Security {
     constructor() {
@@ -89,8 +90,15 @@ class Security {
                     return callback(null, true);
                 }
 
-                const allowedOrigins = [(settings && settings.FRONTEND_URL) || 'http://localhost:5173'];
-                if (allowedOrigins.indexOf(origin) !== -1) {
+                // Parse comma-separated FRONTEND_URL or use default
+                const configUrl = (settings && settings.FRONTEND_URL) || 'http://localhost:5173';
+                const allowedOrigins = configUrl.split(',').map((url) => url.trim());
+
+                // In development, also allow localhost and private LAN IPs on any port
+                const isLocalNetwork = /^https?:\/\/(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|192\.168\.\d+\.\d+)(:\d+)?$/.test(origin);
+                if (settings.NODE_ENV === 'development' && isLocalNetwork) {
+                    callback(null, true);
+                } else if (allowedOrigins.indexOf(origin) !== -1) {
                     callback(null, true);
                 } else {
                     logger.warn(`CORS violation attempt from origin: ${origin}`); callback(new Error('Not allowed by CORS'));
@@ -99,7 +107,7 @@ class Security {
             credentials: true,
             optionsSuccessStatus: 200,
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-            allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-HTTP-Method-Override', 'Accept', 'Origin'],
+            allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-HTTP-Method-Override', 'Accept', 'Origin', 'ngrok-skip-browser-warning'],
             exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
         };
     }
@@ -170,6 +178,30 @@ class Security {
 
 const security = new Security();
 
+async function requireAuth(req, res, next) {
+    const authHeader = req.get('Authorization') || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+    if (!token) {
+        return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+    try {
+        const user = await UserModel.findOne({ 'activeSessions.sessionId': token });
+        if (!user) {
+            return res.status(401).json({ success: false, error: 'Invalid or expired session' });
+        }
+        const session = user.activeSessions.find((s) => s.sessionId === token);
+        if (!session || session.expiresAt < new Date()) {
+            return res.status(401).json({ success: false, error: 'Session expired' });
+        }
+        req.user = user;
+        req.sessionId = token;
+        next();
+    } catch (err) {
+        logger.error('requireAuth error:', err);
+        return res.status(500).json({ success: false, error: 'Authentication check failed' });
+    }
+}
+
 module.exports = {
     securityHeaders: security.securityHeaders,
     noSQLInjectionPrevention: security.noSQLInjectionPrevention,
@@ -179,4 +211,5 @@ module.exports = {
     ipFiltering: security.ipFiltering.bind(security),
     securityLogging: security.securityLogging.bind(security),
     contentTypeValidation: security.contentTypeValidation.bind(security),
+    requireAuth,
 };

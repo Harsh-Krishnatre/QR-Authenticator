@@ -29,7 +29,7 @@ class RateLimiting {
         });
 
         this.registrationLimiter = rateLimit({
-            windowMs: 10 * 60 * 1000,
+            windowMs: 1000, //change to 5 * 60 * 1000 for production
             max: 3,
             message: {
                 success: false,

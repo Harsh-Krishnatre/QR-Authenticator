@@ -1,5 +1,6 @@
 const logger = require('../utils/logger');
 const UserService = require('../services/user.service');
+const Passkey = require('../models/passkey.model');
 const mailSender = require('../utils/mailSender');
 const { hashingUtils, validationUtils } = require('../utils/helpers');
 const {
@@ -13,8 +14,11 @@ const settings = require('../config/settings');
 class AuthController {
     constructor() {
         this.checkUserExist = asyncHandler(this.checkUserExist.bind(this));
+        this.checkEmailRegistered = asyncHandler(this.checkEmailRegistered.bind(this));
         this.registerUser = asyncHandler(this.registerUser.bind(this));
         this.submitPattern = asyncHandler(this.submitPattern.bind(this));
+        this.loginWithPassword = asyncHandler(this.loginWithPassword.bind(this));
+        this.loginWithPasskey = asyncHandler(this.loginWithPasskey.bind(this));
         this.requestLogin = asyncHandler(this.requestLogin.bind(this));
         this.verifyLogin = asyncHandler(this.verifyLogin.bind(this));
         this.loginStatus = asyncHandler(this.loginStatus.bind(this));
@@ -23,6 +27,24 @@ class AuthController {
         this.handleSecurityMethodReset = asyncHandler(this.handleSecurityMethodReset.bind(this));
         this.handlePatternReset = asyncHandler(this.handlePatternReset.bind(this));
         this.cleanupPendingRegistrations = asyncHandler(this.cleanupPendingRegistrations.bind(this));
+        this.updateProfile = asyncHandler(this.updateProfile.bind(this));
+    }
+
+    async checkEmailRegistered(req, res) {
+        const { email } = req.body;
+        try {
+            if (!email || !validationUtils.isValidEmail(email)) {
+                return sendError(res, 400, 'Invalid email format');
+            }
+            const user = await UserService.findByEmail(email);
+            if (!user || user.accountStatus !== 'active') {
+                return sendError(res, 404, 'No account found with this email. Please register first.');
+            }
+            return sendSuccess(res, 'Email is registered', { registered: true, email: email.toLowerCase().trim() }, 200);
+        } catch (error) {
+            logger.error('Email check error:', error);
+            return sendError(res, 500, 'Failed to check email');
+        }
     }
 
     async checkUserExist(req, res) {
@@ -50,7 +72,7 @@ class AuthController {
 
     async registerUser(req, res) {
         const {
-            email, authMethod, securityQuestions, picturePattern,
+            email, authMethod, securityQuestions, picturePattern, password,
         } = req.body;
 
         logger.debug(`Registration attempt for email: ${email} with method: ${authMethod}`);
@@ -65,12 +87,19 @@ class AuthController {
             const secretCode = hashingUtils.generateSecretCode();
             const hashedSecretCode = await hashingUtils.hashData(secretCode);
 
+            if (!password || typeof password !== 'string' || password.length < 8) {
+                return sendError(res, 400, 'Password must be at least 8 characters');
+            }
+
+            const hashedPassword = await hashingUtils.hashData(password);
+
             const userData = {
                 email: email.toLowerCase().trim(),
                 authMethod,
                 hashedSecretCode,
+                hashedPassword,
                 registrationIP: req.clientIP,
-                accountStatus: 'pending_verification',
+                accountStatus: 'active',
             };
 
             if (authMethod === 'security_questions') {
@@ -107,12 +136,10 @@ class AuthController {
             // In test environment, skip DB validation/save to keep unit tests fast and deterministic
             if (process.env.NODE_ENV === 'test') {
                 logger.info(`(test) User registration simulated: ${email}`);
-                return sendSuccess(res, 'User registration initiated successfully', {
+                return sendSuccess(res, 'Registration completed successfully', {
                     email: userData.email,
-                    hashedSecretCode,
                     authMethod: userData.authMethod,
-                    nextStep: 'pattern_selection',
-                    message: 'Please select your number-color pattern to complete registration',
+                    message: 'Account created. Add a passkey in the authenticator app to enable login.',
                 }, 201);
             }
 
@@ -120,12 +147,11 @@ class AuthController {
 
             logger.info(`User registered: ${email}`);
 
-            return sendSuccess(res, 'User registration initiated successfully', {
+            return sendSuccess(res, 'Registration completed successfully', {
                 email: user.email,
-                hashedSecretCode,
                 authMethod: user.authMethod,
-                nextStep: 'pattern_selection',
-                message: 'Please select your number-color pattern to complete registration',
+                accountStatus: user.accountStatus,
+                message: 'Account created. Add a passkey in the authenticator app to enable login.',
             }, 201);
         } catch (error) {
             logger.error('Registration error:', error);
@@ -204,6 +230,151 @@ class AuthController {
             }
 
             return sendError(res, 500, 'Failed to complete registration. Please try again.');
+        }
+    }
+
+    async loginWithPassword(req, res) {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return sendError(res, 400, 'Email and password are required');
+        }
+
+        try {
+            const user = await UserService.findByEmail(email);
+            if (!user) {
+                logSecurityIncident(req, 'LOGIN_USER_NOT_FOUND', { email });
+                return sendError(res, 401, 'Invalid email or password');
+            }
+
+            if (user.accountStatus !== 'active') {
+                return sendError(res, 401, 'Account is not active');
+            }
+
+            if (!user.hashedPassword) {
+                return sendError(res, 401, 'Password login not set up for this account');
+            }
+
+            const match = await hashingUtils.compareData(password, user.hashedPassword);
+            if (!match) {
+                await UserService.incrementFailedAttempts(user._id);
+                logSecurityIncident(req, 'LOGIN_WRONG_PASSWORD', { email });
+                return sendError(res, 401, 'Invalid email or password');
+            }
+
+            const sessionId = hashingUtils.generateSecureRandom(24);
+            const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            user.activeSessions.push({
+                sessionId,
+                deviceInfo: {
+                    userAgent: req.get('User-Agent') || 'unknown',
+                    ipAddress: req.clientIP || req.ip,
+                    deviceType: req.body.deviceType || 'app',
+                },
+                createdAt: new Date(),
+                expiresAt,
+            });
+            await UserService.resetFailedAttempts(user._id);
+            user.lastLoginAt = new Date();
+            await user.save();
+
+            logger.info(`Password login successful: ${email}`);
+            return sendSuccess(res, 'Login successful', { token: sessionId, expiresAt }, 200);
+        } catch (error) {
+            logger.error('Password login error:', error);
+            return sendError(res, 500, 'Login failed');
+        }
+    }
+
+    /**
+     * POST /auth/login/passkey
+     * Web login via QR-scanned passkey + number-color pattern.
+     * Body: { email, clientId, numberColorPattern: [{number, color}] }
+     */
+    async loginWithPasskey(req, res) {
+        const { email, clientId, numberColorPattern } = req.body;
+
+        if (!email || !clientId || !Array.isArray(numberColorPattern) || numberColorPattern.length < 4) {
+            return sendError(res, 400, 'email, clientId and a numberColorPattern (min 4 pairs) are required');
+        }
+
+        try {
+            const user = await UserService.findByEmail(email);
+            if (!user) {
+                logSecurityIncident(req, 'PASSKEY_LOGIN_USER_NOT_FOUND', { email });
+                return sendError(res, 401, 'Invalid credentials');
+            }
+
+            if (user.accountStatus !== 'active') {
+                return sendError(res, 401, 'Account is not active');
+            }
+
+            // Find the passkey by (userId, clientId)
+            const passkey = await Passkey.findOne({ userId: user._id, clientId: clientId.trim() });
+            if (!passkey) {
+                logSecurityIncident(req, 'PASSKEY_NOT_FOUND', { email, clientId });
+                return sendError(res, 401, 'Invalid credentials');
+            }
+
+            if (!passkey.numberColorPattern || passkey.numberColorPattern.length === 0) {
+                return sendError(res, 401, 'This passkey has no pattern set — add a pattern in the Auth App first');
+            }
+
+            // Compare pattern length first
+            if (numberColorPattern.length !== passkey.numberColorPattern.length) {
+                logSecurityIncident(req, 'PASSKEY_PATTERN_MISMATCH', { email, clientId });
+                return sendError(res, 401, 'Incorrect pattern');
+            }
+
+            // Compare each pair
+            const match = passkey.numberColorPattern.every((stored, i) => {
+                const submitted = numberColorPattern[i];
+                return (
+                    Number(stored.number) === Number(submitted.number) &&
+                    String(stored.color).toLowerCase().trim() === String(submitted.color).toLowerCase().trim()
+                );
+            });
+
+            if (!match) {
+                await UserService.incrementFailedAttempts(user._id);
+                logSecurityIncident(req, 'PASSKEY_PATTERN_MISMATCH', { email, clientId });
+                return sendError(res, 401, 'Incorrect pattern');
+            }
+
+            // Issue session
+            const sessionId = hashingUtils.generateSecureRandom(24);
+            const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            user.activeSessions.push({
+                sessionId,
+                deviceInfo: {
+                    userAgent: req.get('User-Agent') || 'unknown',
+                    ipAddress: req.clientIP || req.ip,
+                    deviceType: 'browser',
+                },
+                createdAt: new Date(),
+                expiresAt,
+            });
+            await UserService.resetFailedAttempts(user._id);
+            user.lastLoginAt = new Date();
+            await user.save();
+
+            logger.info(`Passkey login successful: ${email} clientId=${clientId}`);
+            return sendSuccess(res, 'Login successful', {
+                token: sessionId,
+                expiresAt,
+                user: {
+                    email: user.email,
+                    authMethod: user.authMethod,
+                    createdAt: user.createdAt,
+                },
+                passkey: {
+                    issuer: passkey.issuer,
+                    label: passkey.label,
+                },
+            }, 200);
+        } catch (error) {
+            logger.error('Passkey login error:', error);
+            return sendError(res, 500, 'Login failed');
         }
     }
 
@@ -293,28 +464,27 @@ class AuthController {
                 return sendError(res, 401, 'Invalid secret code');
             }
 
-            // Validate number-color pattern input
-            const patternValidation = validationUtils.validatePattern(numberColorPattern);
-            if (!patternValidation.isValid) {
-                return sendError(res, 400, 'Invalid number-color pattern', patternValidation.errors);
+            // Verify number-color pattern only if the user has one stored
+            // (users who registered before passkey-based auth may not have one yet)
+            if (user.numberColorPattern && user.numberColorPattern.hashedPattern) {
+                if (!numberColorPattern) {
+                    return sendError(res, 400, 'Number-color pattern is required');
+                }
+                const patternValidation = validationUtils.validatePattern(numberColorPattern);
+                if (!patternValidation.isValid) {
+                    return sendError(res, 400, 'Invalid number-color pattern', patternValidation.errors);
+                }
+                const matched = await hashingUtils.verifyPattern(numberColorPattern, user.numberColorPattern.hashedPattern);
+                if (!matched) {
+                    user.loginOTP.attempts += 1;
+                    await user.save();
+                    await UserService.incrementFailedAttempts(user._id);
+                    logSecurityIncident(req, 'LOGIN_PATTERN_MISMATCH', { email });
+                    return sendError(res, 401, 'Pattern does not match');
+                }
             }
 
-            if (!user.numberColorPattern || !user.numberColorPattern.hashedPattern) {
-                return sendError(res, 400, 'No number-color pattern registered for this user');
-            }
-
-            // Verify number-color pattern
-            const matched = await hashingUtils.verifyPattern(numberColorPattern, user.numberColorPattern.hashedPattern);
-            if (!matched) {
-                user.loginOTP.attempts += 1;
-                await user.save();
-
-                await UserService.incrementFailedAttempts(user._id);
-                logSecurityIncident(req, 'LOGIN_PATTERN_MISMATCH', { email });
-                return sendError(res, 401, 'Pattern does not match');
-            }
-
-            // Pattern matched → create active session
+            // Create active session
             const sessionId = hashingUtils.generateSecureRandom(24);
             const deviceInfo = {
                 userAgent: req.get('User-Agent') || 'unknown',
@@ -543,6 +713,68 @@ class AuthController {
         } catch (error) {
             logger.error('Cleanup error:', error);
             return sendError(res, 500, 'Failed to cleanup pending registrations');
+        }
+    }
+
+    /**
+     * PUT /auth/profile
+     * Update display name, email, password, and/or avatar for the authenticated user.
+     * Requires: Authorization: Bearer <sessionId>
+     */
+    async updateProfile(req, res) {
+        const { displayName, email, password, avatarUrl } = req.body;
+        const user = req.user;
+
+        try {
+            if (displayName !== undefined) {
+                const trimmed = String(displayName).trim();
+                if (trimmed.length === 0 || trimmed.length > 100) {
+                    return sendError(res, 400, 'Display name must be 1–100 characters');
+                }
+                user.displayName = trimmed;
+            }
+
+            if (email !== undefined) {
+                const trimmed = String(email).toLowerCase().trim();
+                if (!validationUtils.isValidEmail(trimmed)) {
+                    return sendError(res, 400, 'Invalid email format');
+                }
+                if (trimmed !== user.email) {
+                    const existing = await UserService.findByEmail(trimmed);
+                    if (existing) {
+                        return sendError(res, 409, 'Email already in use');
+                    }
+                    user.email = trimmed;
+                }
+            }
+
+            if (password !== undefined && String(password).length > 0) {
+                if (String(password).length < 8) {
+                    return sendError(res, 400, 'Password must be at least 8 characters');
+                }
+                user.hashedPassword = await hashingUtils.hashData(password);
+            }
+
+            if (avatarUrl !== undefined) {
+                // Accept data URIs (base64 images from device) or https URLs
+                const val = String(avatarUrl);
+                if (val.length > 0 && !val.startsWith('data:') && !val.startsWith('https://') && !val.startsWith('http://')) {
+                    return sendError(res, 400, 'avatarUrl must be a data URI or a valid URL');
+                }
+                user.avatarUrl = val.length > 0 ? val : null;
+            }
+
+            await user.save();
+
+            return sendSuccess(res, 'Profile updated', {
+                email: user.email,
+                displayName: user.displayName,
+                avatarUrl: user.avatarUrl,
+                token: req.sessionId,
+            }, 200);
+        } catch (error) {
+            logger.error('Profile update error:', error);
+            return sendError(res, 500, 'Failed to update profile');
         }
     }
 }

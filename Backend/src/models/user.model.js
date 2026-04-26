@@ -23,10 +23,28 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Authentication method is required'],
     },
 
+    displayName: {
+        type: String,
+        trim: true,
+        maxlength: [100, 'Display name cannot exceed 100 characters'],
+        default: null,
+    },
+
+    avatarUrl: {
+        type: String,
+        default: null,
+    },
+
     hashedSecretCode: {
         type: String,
         required: [true, 'Secret code is required'],
         minlength: [60, 'Invalid secret code format'],
+    },
+
+    // Password for direct auth-app login (bcrypt hashed)
+    hashedPassword: {
+        type: String,
+        default: null,
     },
 
     securityAnswers: [{
@@ -202,7 +220,7 @@ userSchema.pre('save', async function (next) {
         }
 
         if (this.accountStatus === 'active') {
-            if (!this.numberColorPattern || !this.numberColorPattern.hashedPattern) throw new Error('Number-color pattern is required');
+            // numberColorPattern is optional — it belongs to passkeys, not user accounts
         }
 
         if (this.activeSessions) {
